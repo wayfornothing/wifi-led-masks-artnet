@@ -9,8 +9,6 @@
 WiFiUDP Udp;
 const int ARTNET_PORT = 6454;
 
-// DMX buffer
-uint8_t dmxBuffer[512];
 int currentUniverse = -1;
 
 // Which universe and channel to watch
@@ -41,6 +39,7 @@ void setup() {
     Serial.println(WiFi.localIP());
     Serial.printf("Device name: %s\n", _device->name());
     Serial.printf("Device universe: %d\n", _device->universe());
+    Serial.printf("Device channel: %d\n", _device->channel());
 
     WiFi.hostname(_device->name());
 
@@ -53,32 +52,47 @@ void loop()
     uint8_t packet[600]; // enough for Art-Net header + DMX
     int packetSize = Udp.parsePacket();
     if (packetSize > 0) {
-        int len = Udp.read(packet, sizeof(packet));
+        int len = Udp.read(packet, sizeof(packet)); // TODO: reduce size ?
 
         // Verify Art-Net header
+// 0   : "Art-Net\0"
+// 8-9 : OpCode (0x5000 for ArtDMX)
+// 10-11 : ProtVer
+// 12   : Sequence
+// 13   : Physical
+// 14-15: Universe (little endian)
+// 16-17: Length (big endian)
+// 18.. : DMX data (up to 512 bytes)
+
         if (len > 18 && memcmp(packet, "Art-Net", 7) == 0) {
             uint16_t opCode = packet[8] | (packet[9] << 8);
             if (opCode == 0x5000)  { 
                 // OpOutput / ArtDmx
-                uint16_t incomingUniverse = packet[14] | (packet[15] << 8);
+                uint16_t universe = packet[14] | (packet[15] << 8);
                 uint16_t length = (packet[16] << 8) | packet[17];
 
-                if (incomingUniverse == _device->universe()) {
+                if (universe == _device->universe() && 
+                    _device->channel() <= length) {
                     // Copy DMX data into buffer
                     if (length > 512) {
                         length = 512;
                     }
-                    memcpy(dmxBuffer, &packet[18], length);
+                    uint8_t* dmx_data = packet + 18;   // pointer to start of DMX data
 
-                    int programValue = dmxBuffer[_device->channel() - 1]; // DMX is 1-based
 
-                    Serial.printf("Universe %d, Channel %d = Program Change %d\n",
-                                    incomingUniverse, _device->channel(), programValue);
+                    // for (auto i=0; i < 32; i++) {
+                    //     Serial.printf("0x%02x ", packet[i]);
+                    // }
 
-                    _device->process();
+
+                    int pc = dmx_data[_device->channel()];
+
+                    Serial.printf("Universe %d Channel %d PC %d\n", universe, _device->channel(), pc);
+
+                    _device->process(dmx_data, length);
                 }
                 else {
-                    Serial.printf("Got universe %d\n", incomingUniverse);
+                    Serial.printf("Got universe %d\n", universe);
                 }
             }
         }
