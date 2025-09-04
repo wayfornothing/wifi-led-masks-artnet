@@ -13,19 +13,22 @@ uint8_t dmxBuffer[512];
 int currentUniverse = -1;
 
 // Which universe and channel to watch
-const int WATCH_UNIVERSE = 2; // match your sender
-const int WATCH_CHANNEL = 11; // match your sender
+// const int WATCH_UNIVERSE = 2; // match your sender
+// const int WATCH_CHANNEL = 11; // match your sender
 
-void setup()
-{
+void setup() {
     Serial.begin(9600);
-    Serial.print("STARTUP");
+
+    delay(1000);
+
+    Serial.println("STARTUP");
+    Serial.printf("%s\n", DEVICE_NAME);
+    Serial.print("Connecting to WiFi");
 
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    Serial.print("Connecting to WiFi");
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
