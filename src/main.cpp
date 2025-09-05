@@ -9,12 +9,6 @@
 WiFiUDP Udp;
 const int ARTNET_PORT = 6454;
 
-int currentUniverse = -1;
-
-// Which universe and channel to watch
-// const int WATCH_UNIVERSE = 2; // match your sender
-// const int WATCH_CHANNEL = 11; // match your sender
-
 IDevice * _device = IDevice::instance();
 
 void setup() {

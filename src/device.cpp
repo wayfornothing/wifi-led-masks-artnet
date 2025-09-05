@@ -1,3 +1,7 @@
+#include "devices/bertrand.h"
+#include "devices/david.h"
+#include "devices/jerome.h"
+#include "devices/maxime.h"
 #include "devices/olivier.h"
 #include "devices/yann.h"
 

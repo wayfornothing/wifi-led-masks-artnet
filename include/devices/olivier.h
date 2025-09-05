@@ -8,8 +8,6 @@
 #define PIN_RIGHT_EYE_LED   D2
 #define PIN_LEFT_EYE_LED    D3
 
-// #define IS_BIT(v, b) (v & (b + 1))
-
 class Device: public IDevice {
 
 public:
