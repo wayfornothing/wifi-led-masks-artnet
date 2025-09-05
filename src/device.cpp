@@ -10,7 +10,9 @@
 IDevice* IDevice::instance() {
 
 #ifdef DEVICE_OLIVIER
-    static Device singleton(2, 1, "LED_OLIVIER");
+    static Device singleton(2, 1, "LED_OLIVIER", { PIN_FOREHEAD_STRIP, 
+                                                   PIN_RIGHT_EYE_LED,
+                                                   PIN_LEFT_EYE_LED });
 #elif DEVICE_YANN
     static Device singleton(2, 2, "LED_YANN");
 #elif DEVICE_BERTRAND

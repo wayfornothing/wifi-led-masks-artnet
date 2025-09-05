@@ -11,12 +11,8 @@
 class Device: public IDevice {
 
 public:
-    Device(int universe, int channel, const char* name)
-        : IDevice(universe, channel, name) {
-
-        pinMode(PIN_FOREHEAD_STRIP, OUTPUT);
-        pinMode(PIN_RIGHT_EYE_LED, OUTPUT);
-        pinMode(PIN_LEFT_EYE_LED, OUTPUT);
+    Device(int universe, int channel, const char* name, std::vector<uint8_t> pins)
+        : IDevice(universe, channel, name, pins) {
     }
 
     void process(uint8_t * dmx_data, uint16_t dmx_data_len) {
@@ -49,8 +45,6 @@ public:
 
         enable(pins, enabled);
     }
-
-
 };
 
 #endif
