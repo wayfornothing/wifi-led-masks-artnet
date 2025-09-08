@@ -54,12 +54,13 @@ public:
             Serial.print(".");
         }
         
-        if (WiFi.status() == WL_CONNECTED) {
+        wl_status_t status = WiFi.status();
+        if (status == WL_CONNECTED) {
             Serial.printf("\nConnected with IP: %s\n", WiFi.localIP().toString().c_str());
             _connected = true;
             _on_connect();
         } else {
-            Serial.println("\nConnection timed out.\n");
+            Serial.printf("\nConnection failed: %d\n", status);
             _connected = false;
         }
     }

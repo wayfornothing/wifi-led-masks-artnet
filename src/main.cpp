@@ -2,18 +2,25 @@
 #include "secrets.h"
 #include "version.h"
 #include "device.h"
+// #include "web_server.h"
 
-IDevice * _device = nullptr;
 
+// DeviceConfig config;
+// ConfigWebServer web(config);
+
+
+LEDDevice _device {};
 void setup() {
     Serial.begin(9600);
     delay(1000);
-    _device = IDevice::instance();
+    // _device = IDevice::instance();
 
-    Serial.print(F("Device name: "));
-    Serial.println(_device->name());
+    _device.begin();
 }
 
 void loop() {
-    _device->tick();
+    _device.tick();
+    // _devicetick();
+
+    // web.handleClient();
 }
