@@ -9,7 +9,7 @@
 // ConfigWebServer web(config);
 
 
-LEDDevice _device {};
+MaskDevice _device {};
 void setup() {
     Serial.begin(9600);
     delay(1000);

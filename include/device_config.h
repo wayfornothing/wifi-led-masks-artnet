@@ -20,9 +20,10 @@ private:
 
     
     const std::map<std::string, uint8_t> _pin_map {
-        { "D0", D0 }, { "D1", D1 }, { "D2", D2 }, { "D3", D3 },
-        { "D4", D4 }, { "D5", D5 }, { "D6", D6 }, { "D7", D7 },
-        { "D8", D8 }, { "D9", D9 }, { "D10", D10 }
+        { "D0", D0 }, // WARNING: FADE OUT NOT POSSIBLE 
+        { "D1", D1 }, { "D2", D2 }, { "D3", D3 },
+        { "D4", D4 }, { "D5", D5 }, { "D6", D6 }, 
+        { "D7", D7 }, { "D8", D8 }, { "D9", D9 }, { "D10", D10 }
     };
 
     uint8_t _pin_from_string(String pin_name) {

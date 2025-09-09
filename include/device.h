@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Ticker.h>
 #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
 
@@ -12,44 +11,7 @@
 
 #define TEST_BIT(v, b) (v & (1 << b))
 
-class LEDDevice {
-
-    class LEDManager {
-    public:
-        LEDManager(uint8_t pin) : _pin(pin), _state(false) {
-            pinMode(_pin, OUTPUT);
-            digitalWrite(_pin, HIGH);
-        }
-
-        void start_blink(unsigned long intervalMs) {
-            stop_blink(); // make sure any old timer is stopped
-            _ticker.attach_ms(intervalMs, +[] (LEDManager* self) {
-                self->_toggle();
-            }, this);
-        }
-
-        void stop_blink() {
-            _ticker.detach();
-            digitalWrite(_pin, HIGH);
-            _state = false;
-        }
-
-        void enable(bool enabled) {
-            _ticker.detach();
-            digitalWrite(_pin, HIGH);
-            _state = false;
-        }
-
-    private:
-        uint8_t _pin;
-        bool _state;
-        Ticker _ticker;
-
-        void _toggle() {
-            _state = !_state;
-            digitalWrite(_pin, _state);
-        }
-    };
+class MaskDevice {
 
 private:
     uint8_t                 _packet[600]; // enough for Art-Net header + DMX
@@ -64,8 +26,12 @@ private:
     #define                 LED_CMD_FADE    (2)
     #define                 LED_CMD_RANDOM  (3)
 
+
+    // LEDManager              _leds[MAX_LEDS];
+
+
 public:
-    LEDDevice() :
+    MaskDevice() :
         _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 2'000, 20, LED_BUILTIN),
         _web(ConfigWebServer(_config)) {
     }
@@ -77,6 +43,7 @@ public:
             digitalWrite(led.pin, HIGH);
             Serial.printf("LED CONF %s (%s)\n", led.desc.c_str(), led.name.c_str());
         }
+
 
         _wifi.on_disconnect([=]() {
             Serial.println("WiFi disconnected! Will retry...");
@@ -92,8 +59,7 @@ public:
             for (auto led : _config.leds) {
                 digitalWrite(led.pin, HIGH);
             }
-            
-            
+                        
             // load config + start web server
             _web.begin();
 
@@ -110,9 +76,6 @@ public:
 
             Serial.print(F("Device name: "));
             Serial.println(_config.hostname);
-
-
-            // config is loaded
         });
 
         _wifi.on_connect_failed([=]() {
@@ -122,38 +85,6 @@ public:
             }
         });
     }
-
-
-    // virtual int device_id() = 0;
-    // const int channel() { return _channel; };
-    // const int universe() { return _universe; };
-    // const char* name() const { return _name; };
-
-    // virtual void process(uint8_t * packet, uint16_t packet_len) = 0;
-
-    // typedef struct sPCMessage  {
-    //     uint8_t reserved: 1;
-    //     uint8_t enable: 1;
-    //     uint8_t command: 2;
-    //     uint8_t led_3: 1;
-    //     uint8_t led_2: 1;
-    //     uint8_t led_1: 1;
-    //     uint8_t led_0: 1;
-    // } sPCMessage;
-
-    // typedef union {
-    //     uint8_t     raw;
-    //     // sPCMessage  pc;
-    //     struct sPCMessage  {
-    //         uint8_t reserved: 1;
-    //         uint8_t enable: 1;
-    //         uint8_t command: 2;
-    //         uint8_t led_3: 1;
-    //         uint8_t led_2: 1;
-    //         uint8_t led_1: 1;
-    //         uint8_t led_0: 1;
-    //     } pc;
-    // } uPCMessage;
 
 
     void tick() {
@@ -194,9 +125,9 @@ public:
                         if (universe == _config.universe && 
                             _config.channel <= length) {
                             // clamp buffer len
-                            if (length > 512) {
-                                length = 512;
-                            }
+                            // if (length > 512) {
+                            //     length = 512;
+                            // }
                             uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
                             uint8_t pc = dmx_data[_config.channel];
                             
@@ -254,6 +185,11 @@ public:
         else {
             // wifi disconnected
         }
+
+
+
+        // process LEDs
+        
     }
 
 
