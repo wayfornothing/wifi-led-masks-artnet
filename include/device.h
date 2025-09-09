@@ -18,7 +18,7 @@ class LEDDevice {
     public:
         LEDManager(uint8_t pin) : _pin(pin), _state(false) {
             pinMode(_pin, OUTPUT);
-            digitalWrite(_pin, LOW);
+            digitalWrite(_pin, HIGH);
         }
 
         void start_blink(unsigned long intervalMs) {
@@ -30,13 +30,13 @@ class LEDDevice {
 
         void stop_blink() {
             _ticker.detach();
-            digitalWrite(_pin, LOW);
+            digitalWrite(_pin, HIGH);
             _state = false;
         }
 
         void enable(bool enabled) {
             _ticker.detach();
-            digitalWrite(_pin, LOW);
+            digitalWrite(_pin, HIGH);
             _state = false;
         }
 
@@ -53,43 +53,28 @@ class LEDDevice {
 
 private:
     uint8_t                 _packet[600]; // enough for Art-Net header + DMX
-    const int               PACKET_SIZE = 32;
+    // const int               PACKET_SIZE = 32;
     WiFiManager             _wifi;
     DeviceConfig            _config;
     ConfigWebServer         _web;
     WiFiUDP                 _udp;
     const int               ARTNET_PORT = 6454;
-
-
-protected:
-    // const int               _universe;
-    // const int               _channel;
-    // const char*             _name;
-    // std::vector<uint8_t>    _pins;
-
+    #define                 LED_CMD_SET     (0)
+    #define                 LED_CMD_STROBE  (1)
+    #define                 LED_CMD_FADE    (2)
+    #define                 LED_CMD_RANDOM  (3)
 
 public:
-    // static Device* instance();
-    // virtual ~Device() {};
-
-    LEDDevice(/*const int universe, const int channel, const char* name, std::vector<uint8_t> pins*/) :
-        _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 5'000),
-        //_universe(universe),
+    LEDDevice() :
+        _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 2'000, 20, LED_BUILTIN),
         _web(ConfigWebServer(_config)) {
     }
 
     void begin() {
-        //_channel(channel),
-        //_name(name),
-        // _pins(pins) {
-        // Serial.begin(9600);
-        Serial.println("DEVICE BEGIN");
-         
-
         // at startup, turn all leds OFF
         for (auto led : _config.leds) {
             pinMode(led.pin, OUTPUT);
-            digitalWrite(led.pin, LOW);
+            digitalWrite(led.pin, HIGH);
             Serial.printf("LED CONF %s (%s)\n", led.desc.c_str(), led.name.c_str());
         }
 
@@ -97,7 +82,7 @@ public:
             Serial.println("WiFi disconnected! Will retry...");
             // network issue happened, turn all the pins ON
             for (auto led : _config.leds) {
-                digitalWrite(led.pin, HIGH);
+                digitalWrite(led.pin, LOW);
             }
         });
 
@@ -105,7 +90,7 @@ public:
             Serial.println("WiFi connected!");
             // network restored, turn all the pins OFF
             for (auto led : _config.leds) {
-                digitalWrite(led.pin, LOW);
+                digitalWrite(led.pin, HIGH);
             }
             
             
@@ -129,6 +114,13 @@ public:
 
             // config is loaded
         });
+
+        _wifi.on_connect_failed([=]() {
+            // max connection attempts reached, turn all the pins ON
+            for (auto led : _config.leds) {
+                digitalWrite(led.pin, LOW);
+            }
+        });
     }
 
 
@@ -139,36 +131,29 @@ public:
 
     // virtual void process(uint8_t * packet, uint16_t packet_len) = 0;
 
-    typedef struct sPCMessage  {
-        uint8_t reserved: 1;
-        uint8_t enable: 1;
-        uint8_t command: 2;
-        uint8_t led_3: 1;
-        uint8_t led_2: 1;
-        uint8_t led_1: 1;
-        uint8_t led_0: 1;
-    } sPCMessage;
+    // typedef struct sPCMessage  {
+    //     uint8_t reserved: 1;
+    //     uint8_t enable: 1;
+    //     uint8_t command: 2;
+    //     uint8_t led_3: 1;
+    //     uint8_t led_2: 1;
+    //     uint8_t led_1: 1;
+    //     uint8_t led_0: 1;
+    // } sPCMessage;
 
-    typedef union {
-        uint8_t     raw;
-        // sPCMessage  pc;
-        struct sPCMessage  {
-            uint8_t reserved: 1;
-            uint8_t enable: 1;
-            uint8_t command: 2;
-            uint8_t led_3: 1;
-            uint8_t led_2: 1;
-            uint8_t led_1: 1;
-            uint8_t led_0: 1;
-        } pc;
-    } uPCMessage;
-
-    typedef enum {
-        SET = 0,
-        STROBE,
-        FADE,
-        RANDOM
-    } eCommand;
+    // typedef union {
+    //     uint8_t     raw;
+    //     // sPCMessage  pc;
+    //     struct sPCMessage  {
+    //         uint8_t reserved: 1;
+    //         uint8_t enable: 1;
+    //         uint8_t command: 2;
+    //         uint8_t led_3: 1;
+    //         uint8_t led_2: 1;
+    //         uint8_t led_1: 1;
+    //         uint8_t led_0: 1;
+    //     } pc;
+    // } uPCMessage;
 
 
     void tick() {
@@ -187,7 +172,7 @@ public:
 
             int packet_size = _udp.parsePacket();
             if (packet_size > 0) {
-                int len = _udp.read(_packet, PACKET_SIZE); // TODO: reduce size ?
+                int len = _udp.read(_packet, sizeof(_packet)); // TODO: reduce size ?
 
                 // Verify Art-Net header
                 // 0   : "Art-Net\0"
@@ -213,43 +198,36 @@ public:
                                 length = 512;
                             }
                             uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
-
-                            // for (auto i=0; i < 32; i++) {
-                            //     Serial.printf("0x%02x ", _packet[i]);
-                            // }
                             uint8_t pc = dmx_data[_config.channel];
                             
-                            uPCMessage upcm = {.raw = pc };
+                            // bit 6: enabled
+                            bool enabled = TEST_BIT(pc, 6);
 
-                            eCommand command = static_cast<eCommand>(upcm.pc.command >> 4);
-                            bool enabled = upcm.pc.enable;
-                            Serial.printf("Universe %d Channel %d PC %d CMD %d EN %d\n", universe, _config.channel, pc, command, enabled);
+                            // bits 5 and 4: command
+                            const uint8_t command = (pc >> 4) & 0x3;
+                            Serial.printf("UNI %d CH %d PC %d CMD %d EN %d LEDs %d%d%d%d\n", universe, _config.channel, pc, command, enabled, 
+                                            !!TEST_BIT(pc, 3), !!TEST_BIT(pc, 2), !!TEST_BIT(pc, 1), !!TEST_BIT(pc, 0));
                             
+                            // bits [0..3]: LEDs
+                            // TODO: optim
                             std::vector<uint8_t> pins;
                             for (int i = 0; i < MAX_LEDS; i++) {
                                 if (TEST_BIT(pc, i)) {
-                                    // _config.leds[i].pin
-
-                                    Serial.printf("PUSH %d %s (%s)\n", 
-                                            _config.leds[i].pin, 
-                                            _config.leds[i].desc.c_str(), 
-                                            _config.leds[i].name.c_str());
                                     pins.push_back(_config.leds[i].pin);
                                 }
                             }
                             
-                            
                             switch (command) {
-                                case SET: {
+                                case LED_CMD_SET: {
                                     enable(pins, enabled);
                                 } break;
-                                case STROBE: {
+                                case LED_CMD_STROBE: {
 
                                 } break;
-                                case FADE: {
+                                case LED_CMD_FADE: {
 
                                 } break;
-                                case RANDOM: {
+                                case LED_CMD_RANDOM: {
 
                                 } break;
                             }
@@ -280,9 +258,9 @@ public:
 
 
     void test(uint8_t pin) {
-        digitalWrite(pin, HIGH);
-        delay(500);
         digitalWrite(pin, LOW);
+        delay(500);
+        digitalWrite(pin, HIGH);
     }
 
 
@@ -309,9 +287,8 @@ public:
     void enable(std::vector<uint8_t> pins, bool enabled) {
         // for (auto pin : pins) {
         for (int i = 0; i < MAX_LEDS; i++) {
-
-            Serial.printf("LED %d %s\n", pins[i], enabled ? "ON" : "OFF");
-            digitalWrite(pins[i], enabled ? HIGH : LOW);
+            // Serial.printf("LED %d %s\n", pins[i], enabled ? "ON" : "OFF");
+            digitalWrite(pins[i], enabled ?  LOW : HIGH);
         }
     }
 };

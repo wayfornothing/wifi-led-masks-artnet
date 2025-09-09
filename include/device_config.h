@@ -28,10 +28,10 @@ private:
     uint8_t _pin_from_string(String pin_name) {
         auto it = _pin_map.find(std::string(pin_name.c_str()));
         if (it != _pin_map.end()) {
-            Serial.printf("MAP %s %d\n", pin_name.c_str(), it->second);
+            // Serial.printf("MAP %s %d\n", pin_name.c_str(), it->second);
             return it->second;
         }
-        Serial.printf("MAP %s not found\n", pin_name.c_str());
+        // Serial.printf("MAP %s not found\n", pin_name.c_str());
         return 0xFF; // invalid pin
     }
 
@@ -50,10 +50,8 @@ public:
 
 public:
     DeviceConfig() {
-
-
         Serial.begin(9600);
-        Serial.println("DeviceConfig CTOR");
+        // Serial.println("DeviceConfig CTOR");
 
         if (!LittleFS.begin()) {
             Serial.println(F("⚠️ LittleFS mount failed!"));
@@ -89,13 +87,13 @@ public:
             leds[i].desc = doc["leds"][i]["desc"].as<String>();
             leds[i].pin = _pin_from_string(leds[i].name);
 
-            Serial.printf("LOAD %s (%s / %d)\n", 
-                                leds[i].desc.c_str(), 
-                                leds[i].name.c_str(),
-                                leds[i].pin);
+            // Serial.printf("LOAD %s (%s / %d)\n", 
+            //                     leds[i].desc.c_str(), 
+            //                     leds[i].name.c_str(),
+            //                     leds[i].pin);
 
         }
-        Serial.println("DeviceConfig CTOR OK");
+        // Serial.println("DeviceConfig CTOR OK");
     }
 
 
@@ -109,10 +107,9 @@ public:
             doc["leds"][i]["desc"] = leds[i].desc;
             leds[i].pin = _pin_from_string(leds[i].name);
 
-            Serial.printf("SAVE %d %s (%s)\n", leds[i].pin, 
-                                               leds[i].desc.c_str(), 
-                                               leds[i].name.c_str());
-
+            Serial.printf("SAVE %s %s (%d)\n", leds[i].desc.c_str(), 
+                                               leds[i].name.c_str(),
+                                               leds[i].pin);
         }
 
         File f = LittleFS.open(CONFIG_FILE, "w");
