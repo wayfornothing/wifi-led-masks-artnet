@@ -1,117 +1,99 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Ticker.h>
 #include <WiFiUdp.h>
+#include <ESP8266mDNS.h>
 
 #include "secrets.h"
+#include "device_config.h"
+#include "web_server.h"
 #include "wifi_manager.h"
+#include "led_device.h"
 
 #define TEST_BIT(v, b) (v & (1 << b))
 
-class IDevice {
-
-    class LEDManager {
-    public:
-        LEDManager(uint8_t pin) : _pin(pin), _state(false) {
-            pinMode(_pin, OUTPUT);
-            digitalWrite(_pin, LOW);
-        }
-
-        void start_blink(unsigned long intervalMs) {
-            stop_blink(); // make sure any old timer is stopped
-            _ticker.attach_ms(intervalMs, +[] (LEDManager* self) {
-                self->_toggle();
-            }, this);
-        }
-
-        void stop_blink() {
-            _ticker.detach();
-            digitalWrite(_pin, LOW);
-            _state = false;
-        }
-
-        void enable(bool enabled) {
-            _ticker.detach();
-            digitalWrite(_pin, LOW);
-            _state = false;
-        }
-
-    private:
-        uint8_t _pin;
-        bool _state;
-        Ticker _ticker;
-
-        void _toggle() {
-            _state = !_state;
-            digitalWrite(_pin, _state);
-        }
-    };
+class Device {
 
 private:
     uint8_t                 _packet[600]; // enough for Art-Net header + DMX
+    // const int               PACKET_SIZE = 32;
     WiFiManager             _wifi;
+    DeviceConfig            _config;
+    ConfigWebServer         _web;
     WiFiUDP                 _udp;
+    std::vector<LEDDevice>  _leds {};
     const int               ARTNET_PORT = 6454;
-
-
-protected:
-    const int               _universe;
-    const int               _channel;
-    const char*             _name;
-    std::vector<uint8_t>    _pins;
-
+    #define                 LED_CMD_SET     (0)
+    #define                 LED_CMD_BLINK   (1)
+    #define                 LED_CMD_FADE    (2)
+    #define                 LED_CMD_RANDOM  (3)
 
 public:
-    static IDevice* instance();
-    virtual ~IDevice() {};
+    Device() :
+        _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 2'000, 20, LED_BUILTIN),
+        _web(ConfigWebServer(_config)) {
+    }
 
-    IDevice(const int universe, const int channel, const char* name, std::vector<uint8_t> pins) :
-        _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 5'000),
-        _universe(universe),
-        _channel(channel),
-        _name(name),
-        _pins(pins) {
-
+    void begin() {
         // at startup, turn all leds OFF
-        for (auto pin : _pins) {
-            pinMode(pin, OUTPUT);
-            digitalWrite(pin, LOW);
+        for (auto led : _config.leds) {
+            _leds.push_back(LEDDevice(led.pin, led.name));
         }
 
-        _wifi.on_disconnect([pins]() {
+        _wifi.on_disconnect([=]() {
             Serial.println("WiFi disconnected! Will retry...");
             // network issue happened, turn all the pins ON
-            for (auto pin : pins) {
-                digitalWrite(pin, HIGH);
+            for (auto& led : _leds) {
+                led.enable(true);
             }
         });
 
         _wifi.on_connect([=]() {
             Serial.println("WiFi connected!");
             // network restored, turn all the pins OFF
-            for (auto pin : pins) {
-                digitalWrite(pin, LOW);
+            for (auto& led : _leds) {
+                led.enable(false);
             }
+                        
+            // load config + start web server
+            _web.begin();
 
             // wait for artnet messages
-            _wifi.set_hostname(name);
+            _wifi.set_hostname(_config.hostname.c_str());
+            if (MDNS.begin(_config.hostname)) {
+                Serial.print(F("mDNS responder started, browse to: "));
+                Serial.print(F("http://"));
+                Serial.print(_config.hostname);
+                Serial.println(F(".local"));
+            }
+
             _udp.begin(ARTNET_PORT);
+
+            Serial.print(F("Device name: "));
+            Serial.println(_config.hostname);
+        });
+
+        _wifi.on_connect_failed([=]() {
+            // max connection attempts reached, turn all the pins ON
+            for (auto& led : _leds) {
+                led.enable(true);
+            }
         });
     }
 
 
-    // virtual int device_id() = 0;
-    const int channel() { return _channel; };
-    const int universe() { return _universe; };
-    const char* name() const { return _name; };
-
-    virtual void process(uint8_t * packet, uint16_t packet_len) = 0;
-
     void tick() {
+
+        _cli();
+
+        // keep service running
+        MDNS.update();
 
         // check wifi status
         _wifi.tick();
+
+        // run web server
+        _web.tick();
 
         // process artnet packets
         if (_wifi.is_connected()) {
@@ -137,19 +119,24 @@ public:
                         uint16_t universe = _packet[14] | (_packet[15] << 8);
                         uint16_t length = (_packet[16] << 8) | _packet[17];
 
-                        if (universe == _universe && _channel <= length) {
+                        if (universe == _config.universe && 
+                            _config.channel <= length) {
                             // clamp buffer len
-                            if (length > 512) {
-                                length = 512;
-                            }
-                            uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
-
-                            // for (auto i=0; i < 32; i++) {
-                            //     Serial.printf("0x%02x ", _packet[i]);
+                            // if (length > 512) {
+                            //     length = 512;
                             // }
-                            int pc = dmx_data[_channel];
-                            Serial.printf("Universe %d Channel %d PC %d\n", universe, _channel, pc);
-                            process(dmx_data, length);
+                            uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
+                            uint8_t pc = dmx_data[_config.channel];
+                            
+                            // bit 6: enabled
+                            bool enabled = TEST_BIT(pc, 6);
+
+                            // bits 5 and 4: command
+                            const uint8_t command = (pc >> 4) & 0x3;
+
+                            Serial.printf("UNI %d CH %d PC %d CMD %d EN %d LEDs %d%d%d%d\n", universe, _config.channel, pc, command, enabled, 
+                                            !!TEST_BIT(pc, 3), !!TEST_BIT(pc, 2), !!TEST_BIT(pc, 1), !!TEST_BIT(pc, 0));
+                            _process(pc & 0xF, command, enabled);
                         }
                         else {
                             // universe or channel not matching requisites
@@ -174,31 +161,141 @@ public:
     }
 
 
-
-    void strobe(std::vector<uint8_t> pins, bool enabled) {
-        // for (auto pin : pins) {
-        //     Serial.printf("STROBE pin=%d %dms\n", pin, duration_ms);
-
-        // }
-    }
-
-    void fade(std::vector<uint8_t> pins, bool fade_in, uint32_t duration_ms) {
-        for (auto pin : pins) {
-            Serial.printf("FADE %s pin=%d %dms\n", fade_in ? "IN" : "OUT", pin, duration_ms);
-
+    void _process(uint8_t leds_bitfield, uint8_t command, bool enabled) {
+        switch (command) {
+            case LED_CMD_SET: {
+                int i = 0;
+                for (auto& led : _leds) {
+                    if (TEST_BIT(leds_bitfield, i)) {
+                        Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                        led.enable(enabled);
+                    }
+                    i++;
+                }
+            } break;
+            case LED_CMD_BLINK: {
+                if (enabled) {
+                    int i = 0;
+                    for (auto& led : _leds) {
+                        if (TEST_BIT(leds_bitfield, i)) {
+                            Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            led.start_blink();
+                        }
+                        i++;
+                    }
+                }
+            } break;
+            case LED_CMD_FADE: {
+                if (enabled) {
+                    // fade in
+                    int i = 0;
+                    for (auto& led : _leds) {
+                        if (TEST_BIT(leds_bitfield, i)) {
+                            Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            led.start_fade_in();
+                        }
+                        i++;
+                    }
+                }
+                else {
+                    // fade out
+                    // Serial.println(F("FADE OUT"));
+                    int i = 0;
+                    for (auto& led : _leds) {
+                        if (TEST_BIT(leds_bitfield, i)) {
+                            Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            led.start_fade_out();
+                        }
+                        i++;
+                    }
+                }
+            } break;
+            case LED_CMD_RANDOM: {
+                if (enabled) {
+                    // random start
+                    int i = 0;
+                    for (auto& led : _leds) {
+                        if (TEST_BIT(leds_bitfield, i)) {
+                            Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            led.start_random();
+                        }
+                        i++;
+                    }
+                }
+            } break;
         }
     }
 
-    void random(std::vector<uint8_t> pins, uint32_t duration_ms) {
-        for (auto pin : pins) {
-            Serial.printf("RAND pin=%d %dms\n", pin, duration_ms);
-        }
-    }
 
-    void enable(std::vector<uint8_t> pins, bool enabled) {
-        for (auto pin : pins) {
-            Serial.printf("LED %d %s\n", pin, enabled ? "ON" : "OFF");
-            digitalWrite(pin, enabled ? HIGH : LOW);
+    void _cli() {
+        uint8_t all_leds = 0xF;
+        int c = Serial.read();
+        if (c >= 0) {
+            switch (c) {
+                case 'E':
+                    // all ON
+                    _process(all_leds, LED_CMD_SET, true);
+                    break;
+                case 'e':
+                    // all OFF
+                    _process(all_leds, LED_CMD_SET, false);
+                    break;
+                case 'S':
+                case 'B':
+                    // blink ON
+                    _process(all_leds, LED_CMD_BLINK, true);
+                    break;
+                case 's':
+                case 'b':
+                    // blink OFF
+                    _process(all_leds, LED_CMD_SET, true);
+                break;
+                case 'R':
+                    // random ON
+                    _process(all_leds, LED_CMD_RANDOM, true);
+                    break;
+                case 'r':
+                    // random OFF
+                    _process(all_leds, LED_CMD_SET, true);
+                    break;
+                case 'F':
+                    // fade IN
+                    _process(all_leds, LED_CMD_FADE, true);
+                    break;
+                case 'f':
+                    // fade OUT
+                    _process(all_leds, LED_CMD_FADE, false);
+                    break;
+                case '*':
+                    for (auto& led : _leds) {
+                        led.random_interval_ms += 10;
+                        Serial.printf("RITV: %dms\n", led.random_interval_ms);
+                        led.start_random();
+                    }
+                    break;
+                case '/':
+                    for (auto& led : _leds) {
+                        led.random_interval_ms -= 10;
+                        Serial.printf("RITV: %dms\n", led.random_interval_ms);
+                        led.start_random();
+                    }
+                    break;
+                case '+':
+                    for (auto& led : _leds) {
+                        led.blink_interval_ms += 10;
+                        Serial.printf("BITV: %dms\n", led.blink_interval_ms);
+                        led.start_blink();
+                    }
+                    break;
+                case '-':
+                    for (auto& led : _leds) {
+                        led.blink_interval_ms -= 10;
+                        Serial.printf("BITV: %dms\n", led.blink_interval_ms);
+                        led.start_blink();
+                    }
+                    break;
+
+            }
         }
     }
 };
