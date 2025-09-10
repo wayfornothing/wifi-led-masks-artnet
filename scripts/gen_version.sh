@@ -26,9 +26,9 @@ OUTPUT_FILE="include/version.h"
 cat <<EOL > $OUTPUT_FILE
 #pragma once
 
-#define GIT_HASH        F("$GIT_HASH")
-#define GIT_BRANCH      F("$GIT_BRANCH")
-#define GIT_TAG         F("$GIT_TAG_CLEAN")
+#define GIT_HASH        ("$GIT_HASH")
+#define GIT_BRANCH      ("$GIT_BRANCH")
+#define GIT_TAG         ("$GIT_TAG_CLEAN")
 #define GIT_TAG_MAJOR   ($MAJOR)
 #define GIT_TAG_MINOR   ($MINOR)
 #define GIT_TAG_PATCH   ($PATCH)

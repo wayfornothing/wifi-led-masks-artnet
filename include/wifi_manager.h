@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
+#include <DNSServer.h>
 #include <ESP8266WiFi.h>
 #include <functional>
 
+#include "led_device.h"
 
 /**
  * @brief Manage the WiFi connection and error handling state.
@@ -17,8 +19,8 @@ class WiFiManager {
 private:
     using wifi_callback_t = std::function<void()>;
 
-    const char* _ssid;
-    const char* _pass;
+    // const char* _ssid;
+    // const char* _pass;
     uint32_t _timeout_ms;
     uint32_t _retry_interval_ms;
     uint16_t  _attempts;
@@ -43,14 +45,12 @@ public:
      * @param max_attempts if 0, infinite attempts
      * @param pin_ui LED pin to signal wifi status
      */
-    WiFiManager(const char* ssid, 
-                const char* pass, 
-                uint32_t timeout_ms, 
+    WiFiManager(uint32_t timeout_ms, 
                 uint32_t retry_interval_ms,
                 uint16_t max_attempts,
                 uint8_t pin_ui) :
-        _ssid(ssid),
-        _pass(pass),
+        // _ssid(ssid),
+        // _pass(pass),
         _timeout_ms(timeout_ms),
         _retry_interval_ms(retry_interval_ms),
         _attempts(0),
@@ -79,11 +79,18 @@ public:
     }
 
     void connect() {
-        Serial.printf("Connecting to %s", _ssid);
+        
+        LEDDevice led(_pin_ui, "D4");
+        led.blink_interval_ms = 200;
+        
+        DeviceConfig& cfg = DeviceConfig::instance();
+        Serial.printf("Connecting to %s", cfg.get_SSID().c_str());
+        
+        led.start_blink();
         WiFi.mode(WIFI_STA);
-        WiFi.begin(_ssid, _pass);
+        WiFi.begin(cfg.get_SSID(), cfg.get_password());
+        
 
-        digitalWrite(_pin_ui, LOW);
         unsigned long start = millis();
         while (WiFi.status() != WL_CONNECTED && millis() - start < _timeout_ms) {
             digitalWrite(_pin_ui, !digitalRead(_pin_ui));
@@ -91,8 +98,7 @@ public:
             Serial.print(".");
         }
         
-
-        digitalWrite(_pin_ui, HIGH);
+        led.enable(false);
         wl_status_t status = WiFi.status();
         if (status == WL_CONNECTED) {
             Serial.printf("\nConnected with IP: %s\n", WiFi.localIP().toString().c_str());
@@ -149,12 +155,10 @@ public:
         }
     }
 
-
     void reset() {
         _attempts = 0;
         _active = true;
     }
-
 
     bool is_connected() const {
         return WiFi.status() == WL_CONNECTED;
