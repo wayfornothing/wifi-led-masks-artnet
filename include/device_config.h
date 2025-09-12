@@ -1,126 +1,159 @@
 #pragma once
-
-#include <Arduino.h>
-#include <LittleFS.h>
 #include <ArduinoJson.h>
+#include <LittleFS.h>
 #include <map>
-
-#define MAX_LEDS (4)
+#include <string>
 
 class DeviceConfig {
-
 private:
-    struct sLedConfig {
-        String name;    // "D2", "D5", etc
-        String desc;    // long description
-        uint8_t pin;    // real pin number
-    };
 
-    const char* CONFIG_FILE = "/config.json";
+    const String CONFIG_FILE = "/config.json";
 
-    
-    const std::map<std::string, uint8_t> _pin_map {
-        { "D0", D0 }, // WARNING: FADE OUT NOT POSSIBLE 
-        { "D1", D1 }, { "D2", D2 }, { "D3", D3 },
-        { "D4", D4 }, { "D5", D5 }, { "D6", D6 }, 
-        { "D7", D7 }, { "D8", D8 }, { "D9", D9 }, { "D10", D10 }
-    };
-
-    uint8_t _pin_from_string(String pin_name) {
-        auto it = _pin_map.find(std::string(pin_name.c_str()));
-        if (it != _pin_map.end()) {
-            // Serial.printf("MAP %s %d\n", pin_name.c_str(), it->second);
-            return it->second;
-        }
-        // Serial.printf("MAP %s not found\n", pin_name.c_str());
-        return 0xFF; // invalid pin
+    // Singleton
+    DeviceConfig() : universe(0), channel(1) {
+        load();
     }
+    DeviceConfig(const DeviceConfig&) = delete;
+    DeviceConfig& operator=(const DeviceConfig&) = delete;
 
-public:
+    // Configuration fields
     String hostname;
-    int universe;
-    int channel;
-    sLedConfig leds[MAX_LEDS];
-    // uint8_t pins[MAX_LEDS];
+    String ssid;
+    String pass;
+    uint16_t universe;
+    uint16_t channel;
 
-    // TODO:
-    // String ssid;
-    // String pass;
-    // uint32_t    connect_timeout_ms;
-    // uint32_t    connect_retry_ms;
+    struct LEDConfig {
+        String name;
+        String desc;
+        uint8_t pin;
+        uint16_t blink_ms;
+        uint16_t random_ms;
+        uint16_t fade_ms;
+    };
+
+    std::vector<LEDConfig> leds;
 
 public:
-    DeviceConfig() {
-        Serial.begin(9600);
-        // Serial.println("DeviceConfig CTOR");
+    static DeviceConfig& instance() {
+        static DeviceConfig _instance;
+        return _instance;
+    }
 
+    bool load() {
         if (!LittleFS.begin()) {
-            Serial.println(F("⚠️ LittleFS mount failed!"));
-            // TODO: error management
+            // TODO: error mgmt
+            Serial.println("LOAD: LFS ERR");
+            return false;
         }
-
         if (!LittleFS.exists(CONFIG_FILE)) {
-            // create default config
-            Serial.println(F("⚠️ No config file, using defaults"));
-            hostname = F("wfn-mask");
-            universe = 1;
-            channel = 1;
-            for (int i = 0; i < MAX_LEDS; i++){ 
-                leds[i].name = F("D0"); 
-                leds[i].desc = F("LED");
-                leds[i].pin = D0;
-            }
-            return;
+            Serial.println("LOAD: CFG ERR");
+            return false;
         }
+
         File f = LittleFS.open(CONFIG_FILE, "r");
-        StaticJsonDocument<512> doc;
-        if (deserializeJson(doc, f)) {
-            Serial.printf("Failed to parse %s\n", CONFIG_FILE);
-            return;
+        if (!f) {
+            Serial.println("LOAD: OPEN ERR");
+            return false;
         }
+
+        DynamicJsonDocument doc(2048);
+        DeserializationError err = deserializeJson(doc, f);
         f.close();
-
-        hostname = doc["hostname"].as<String>();
-        universe = doc["universe"];
-        channel  = doc["channel"];
-        for (int i = 0; i < MAX_LEDS; i++) {
-            leds[i].name  = doc["leds"][i]["name"].as<String>();
-            leds[i].desc = doc["leds"][i]["desc"].as<String>();
-            leds[i].pin = _pin_from_string(leds[i].name);
-
-            // Serial.printf("LOAD %s (%s / %d)\n", 
-            //                     leds[i].desc.c_str(), 
-            //                     leds[i].name.c_str(),
-            //                     leds[i].pin);
-
+        if (err) {
+            // TODO: error mgmt
+            Serial.println("LOAD: JSON ERR");
+            return false;
         }
-        // Serial.println("DeviceConfig CTOR OK");
+
+        hostname    = doc["hostname"]   | "esp8266-device";
+        ssid        = doc["ssid"]       | "";
+        pass        = doc["pass"]       | "";
+        universe    = doc["universe"]   | 0;
+        channel     = doc["channel"]    | 1;
+
+        leds.clear();
+        if (doc.containsKey("leds")) {
+            for (JsonObject led : doc["leds"].as<JsonArray>()) {
+                LEDConfig cfg;
+                cfg.name           = (const char*) led["name"];
+                cfg.desc           = (const char*) led["desc"];
+                cfg.pin            = led["pin"];
+                cfg.blink_ms  = led["blink_ms"]  | 0;
+                cfg.random_ms = led["random_ms"] | 0;
+                cfg.fade_ms   = led["fade_ms"]   | 0;
+                leds.push_back(cfg);
+            }
+        }
+        
+        Serial.println("LOAD: OK");
+        debug();
+        return true;
     }
 
 
-    void save() {
-        StaticJsonDocument<512> doc;
+    void debug() {
+        Serial.println(hostname);
+        Serial.println(ssid);
+        Serial.println(universe);
+        Serial.println(channel);
+    }
+
+
+    bool save() {
+        if (!LittleFS.begin()) {
+             // TODO: error mgmt
+            Serial.println("SAVE: LFS ERR");
+            return false;
+        }
+
+        DynamicJsonDocument doc(2048);
         doc["hostname"] = hostname;
+        doc["ssid"]     = ssid;
+        doc["pass"]     = pass;
         doc["universe"] = universe;
         doc["channel"]  = channel;
-        for (int i = 0; i < MAX_LEDS; i++) {
-            doc["leds"][i]["name"] = leds[i].name;
-            doc["leds"][i]["desc"] = leds[i].desc;
-            leds[i].pin = _pin_from_string(leds[i].name);
 
-            Serial.printf("SAVE %s %s (%d)\n", leds[i].desc.c_str(), 
-                                               leds[i].name.c_str(),
-                                               leds[i].pin);
+        JsonArray ledsArr = doc.createNestedArray("leds");
+        for (auto& l : leds) {
+            JsonObject led = ledsArr.createNestedObject();
+            led["name"]         = l.name;
+            led["desc"]         = l.desc;
+            led["pin"]          = l.pin;
+            led["blink_ms"]     = l.blink_ms;
+            led["random_ms"]    = l.random_ms;
+            led["fade_ms"]      = l.fade_ms;
         }
 
         File f = LittleFS.open(CONFIG_FILE, "w");
         if (!f) {
-            Serial.printf("Failed to write %s\n", CONFIG_FILE);
-            return;
+            // TODO: error mgmt
+            Serial.println("SAVE: LFS OPEN ERR");
+            return false;
         }
         serializeJson(doc, f);
-
         f.close();
-        Serial.println("Config saved, reboot to apply");
+
+        Serial.println("SAVE: OK");
+debug();
+        return true;
     }
+
+    // Accessors
+    const String& get_hostname() const { return hostname; }
+    void set_hostname(const String& h) { hostname = h; }
+
+    const String& get_SSID() const { return ssid; }
+    void set_SSID(const String& s) { ssid = s; }
+
+    const String& get_password() const { return pass; }
+    void set_password(const String& p) { pass = p; }
+
+    uint16_t get_universe() const { return universe; }
+    void set_universe(uint16_t u) { universe = u; }
+
+    uint16_t get_channel() const { return channel; }
+    void set_channel(uint16_t c) { channel = c; }
+
+    std::vector<LEDConfig>& get_leds() { return leds; }
 };

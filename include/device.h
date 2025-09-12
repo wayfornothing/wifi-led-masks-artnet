@@ -4,7 +4,6 @@
 #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
 
-#include "secrets.h"
 #include "device_config.h"
 #include "web_server.h"
 #include "wifi_manager.h"
@@ -17,26 +16,28 @@ class Device {
 private:
     uint8_t                 _packet[600]; // enough for Art-Net header + DMX
     // const int               PACKET_SIZE = 32;
-    WiFiManager             _wifi;
-    DeviceConfig            _config;
+    WiFiManager            _wifi;
     ConfigWebServer         _web;
     WiFiUDP                 _udp;
-    std::vector<LEDDevice>  _leds {};
+    std::vector<LEDDevice>  _leds;
     const int               ARTNET_PORT = 6454;
     #define                 LED_CMD_SET     (0)
     #define                 LED_CMD_BLINK   (1)
     #define                 LED_CMD_FADE    (2)
     #define                 LED_CMD_RANDOM  (3)
-
-public:
+    
+    public:
     Device() :
-        _wifi(WIFI_SSID, WIFI_PASSWORD, 10'000, 2'000, 20, LED_BUILTIN),
-        _web(ConfigWebServer(_config)) {
+    _wifi(10'000, 2'000, 20, LED_BUILTIN),
+    _web(ConfigWebServer()) {
     }
-
+    
     void begin() {
+        
+        DeviceConfig& _config = DeviceConfig::instance();
+        
         // at startup, turn all leds OFF
-        for (auto led : _config.leds) {
+        for (auto led : _config.get_leds()) {
             _leds.push_back(LEDDevice(led.pin, led.name));
         }
 
@@ -59,18 +60,22 @@ public:
             _web.begin();
 
             // wait for artnet messages
-            _wifi.set_hostname(_config.hostname.c_str());
-            if (MDNS.begin(_config.hostname)) {
+            DeviceConfig& cfg = DeviceConfig::instance();
+            _wifi.set_hostname(cfg.get_hostname().c_str());
+            if (MDNS.begin(cfg.get_hostname())) {
                 Serial.print(F("mDNS responder started, browse to: "));
                 Serial.print(F("http://"));
-                Serial.print(_config.hostname);
+                Serial.print(cfg.get_hostname());
                 Serial.println(F(".local"));
             }
 
             _udp.begin(ARTNET_PORT);
 
             Serial.print(F("Device name: "));
-            Serial.println(_config.hostname);
+            Serial.println(cfg.get_hostname());
+
+            LEDDevice led(D4, "");
+            led.enable(true);
         });
 
         _wifi.on_connect_failed([=]() {
@@ -80,7 +85,6 @@ public:
             }
         });
     }
-
 
     void tick() {
 
@@ -119,14 +123,15 @@ public:
                         uint16_t universe = _packet[14] | (_packet[15] << 8);
                         uint16_t length = (_packet[16] << 8) | _packet[17];
 
-                        if (universe == _config.universe && 
-                            _config.channel <= length) {
+                        DeviceConfig& cfg = DeviceConfig::instance();
+                        if (universe == cfg.get_universe() && 
+                            cfg.get_channel() <= length) {
                             // clamp buffer len
                             // if (length > 512) {
                             //     length = 512;
                             // }
                             uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
-                            uint8_t pc = dmx_data[_config.channel];
+                            uint8_t pc = dmx_data[cfg.get_channel()];
                             
                             // bit 6: enabled
                             bool enabled = TEST_BIT(pc, 6);
@@ -134,7 +139,7 @@ public:
                             // bits 5 and 4: command
                             const uint8_t command = (pc >> 4) & 0x3;
 
-                            Serial.printf("UNI %d CH %d PC %d CMD %d EN %d LEDs %d%d%d%d\n", universe, _config.channel, pc, command, enabled, 
+                            Serial.printf("UNI %d CH %d PC %d CMD %d EN %d LEDs %d%d%d%d\n", universe, cfg.get_channel(), pc, command, enabled, 
                                             !!TEST_BIT(pc, 3), !!TEST_BIT(pc, 2), !!TEST_BIT(pc, 1), !!TEST_BIT(pc, 0));
                             _process(pc & 0xF, command, enabled);
                         }
@@ -160,7 +165,7 @@ public:
         }
     }
 
-
+private:
     void _process(uint8_t leds_bitfield, uint8_t command, bool enabled) {
         switch (command) {
             case LED_CMD_SET: {
@@ -225,7 +230,6 @@ public:
             } break;
         }
     }
-
 
     void _cli() {
         uint8_t all_leds = 0xF;
