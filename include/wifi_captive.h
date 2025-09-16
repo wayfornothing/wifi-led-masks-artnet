@@ -52,8 +52,7 @@ class WiFiCaptivePortal {
             cfg.set_SSID(ssid);
             cfg.set_password(pass);
             cfg.set_hostname(name);
-
-            cfg.save();
+            cfg.save_wifi();
 
             server.send(200, "text/html", "<html><body><h1>Saved. Rebooting...</h1></body></html>");
             delay(1000);

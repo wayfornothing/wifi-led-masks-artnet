@@ -5,9 +5,10 @@
 #include <string>
 
 class DeviceConfig {
+public:    
+    const String WIFI_CONFIG_FILE = "/wifi.json";
+    const String LEDS_CONFIG_FILE = "/leds.json";
 private:
-
-    const String CONFIG_FILE = "/config.json";
 
     // Singleton
     DeviceConfig() : universe(0), channel(1) {
@@ -43,46 +44,71 @@ public:
     bool load() {
         if (!LittleFS.begin()) {
             // TODO: error mgmt
-            Serial.println("LOAD: LFS ERR");
-            return false;
-        }
-        if (!LittleFS.exists(CONFIG_FILE)) {
-            Serial.println("LOAD: CFG ERR");
+            Serial.println(F("WIFI/LEDS: LFS ERR"));
+            // TODO: error mgmt
             return false;
         }
 
-        File f = LittleFS.open(CONFIG_FILE, "r");
-        if (!f) {
-            Serial.println("LOAD: OPEN ERR");
+        // WIFI
+        if (!LittleFS.exists(WIFI_CONFIG_FILE)) {
+            // TODO: error mgmt
+            Serial.println(F("WIFI: CFG ERR"));
             return false;
         }
-
-        DynamicJsonDocument doc(2048);
-        DeserializationError err = deserializeJson(doc, f);
-        f.close();
+        File wifi_file = LittleFS.open(WIFI_CONFIG_FILE, "r");
+        if (!wifi_file) {
+            // TODO: error mgmt
+            Serial.println(F("WIFI: OPEN ERR"));
+            return false;
+        }
+        DynamicJsonDocument wifi_json(2048);
+        DeserializationError err = deserializeJson(wifi_json, wifi_file);
+        wifi_file.close();
         if (err) {
             // TODO: error mgmt
-            Serial.println("LOAD: JSON ERR");
+            Serial.println(F("WIFI: JSON ERR"));
             return false;
         }
 
-        hostname    = doc["hostname"]   | "esp8266-device";
-        ssid        = doc["ssid"]       | "";
-        pass        = doc["pass"]       | "";
-        universe    = doc["universe"]   | 0;
-        channel     = doc["channel"]    | 1;
+        hostname = wifi_json["hostname"] | "esp8266-device";
+        ssid     = wifi_json["ssid"]     | "";
+        pass     = wifi_json["pass"]     | "";
+
+        // LEDS
+        if (!LittleFS.exists(LEDS_CONFIG_FILE)) {
+            // TODO: error mgmt
+            Serial.println(F("LEDS: CFG ERR"));
+            return false;
+        }
+        File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "r");
+        if (!leds_file) {
+            // TODO: error mgmt
+            Serial.println(F("LEDS: OPEN ERR"));
+            return false;
+        }
+        DynamicJsonDocument leds_json(2048);
+        err = deserializeJson(leds_json, leds_file);
+        leds_file.close();
+        if (err) {
+            // TODO: error mgmt
+            Serial.println(F("WIFI: JSON ERR"));
+            return false;
+        }
+
+        universe = leds_json["universe"]   | 0;
+        channel  = leds_json["channel"]    | 1;
 
         leds.clear();
-        if (doc.containsKey("leds")) {
-            for (JsonObject led : doc["leds"].as<JsonArray>()) {
-                LEDConfig cfg;
-                cfg.name           = (const char*) led["name"];
-                cfg.desc           = (const char*) led["desc"];
-                cfg.pin            = led["pin"];
-                cfg.blink_ms  = led["blink_ms"]  | 0;
-                cfg.random_ms = led["random_ms"] | 0;
-                cfg.fade_ms   = led["fade_ms"]   | 0;
-                leds.push_back(cfg);
+        if (leds_json.containsKey("leds")) {
+            for (JsonObject led : leds_json["leds"].as<JsonArray>()) {
+                LEDConfig lc;
+                lc.name           = (const char*) led["name"];
+                lc.desc           = (const char*) led["desc"];
+                lc.pin            = led["pin"];
+                lc.blink_ms  = led["blink_ms"]  | 0;
+                lc.random_ms = led["random_ms"] | 0;
+                lc.fade_ms   = led["fade_ms"]   | 0;
+                leds.push_back(lc);
             }
         }
         
@@ -91,19 +117,18 @@ public:
         return true;
     }
 
-
     void debug() {
         Serial.println(hostname);
         Serial.println(ssid);
-        Serial.println(universe);
-        Serial.println(channel);
+        // Serial.println(pass);
+        Serial.printf("UNI: %d\n", universe);
+        Serial.printf("CHAN: %d\n", channel);
     }
 
-
-    bool save() {
+    bool save_wifi() {
         if (!LittleFS.begin()) {
              // TODO: error mgmt
-            Serial.println("SAVE: LFS ERR");
+            Serial.println(F("WIFI: LFS ERR"));
             return false;
         }
 
@@ -111,6 +136,28 @@ public:
         doc["hostname"] = hostname;
         doc["ssid"]     = ssid;
         doc["pass"]     = pass;
+
+        File f = LittleFS.open(WIFI_CONFIG_FILE, "w");
+        if (!f) {
+            // TODO: error mgmt
+            Serial.println(F("WIFI: LFS OPEN ERR"));
+            return false;
+        }
+        serializeJson(doc, f);
+        f.close();
+        Serial.println("WIFI: OK");
+        debug();
+        return true;
+    }
+        
+    bool save_leds() {
+        if (!LittleFS.begin()) {
+             // TODO: error mgmt
+            Serial.println("LEDS: LFS ERR");
+            return false;
+        }
+
+        DynamicJsonDocument doc(2048);
         doc["universe"] = universe;
         doc["channel"]  = channel;
 
@@ -125,7 +172,7 @@ public:
             led["fade_ms"]      = l.fade_ms;
         }
 
-        File f = LittleFS.open(CONFIG_FILE, "w");
+        File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
         if (!f) {
             // TODO: error mgmt
             Serial.println("SAVE: LFS OPEN ERR");
@@ -134,7 +181,7 @@ public:
         serializeJson(doc, f);
         f.close();
 
-        Serial.println("SAVE: OK");
+        Serial.println("LEDS: OK");
 debug();
         return true;
     }

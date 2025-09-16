@@ -28,8 +28,8 @@ private:
     
     public:
     Device() :
-    _wifi(10'000, 2'000, 20, LED_BUILTIN),
-    _web(ConfigWebServer()) {
+        _wifi(10'000, 2'000, 20, LED_BUILTIN),
+        _web(ConfigWebServer()) {
     }
     
     void begin() {
