@@ -71,11 +71,10 @@ private:
 
             _udp.begin(ARTNET_PORT);
 
-            Serial.print(F("Device name: "));
-            Serial.println(cfg.get_hostname());
-
-            LEDDevice led(D4, "");
-            led.enable(true);
+            // Serial.print(F("Device name: "));
+            // Serial.println(cfg.get_hostname());
+            // LEDDevice led(D4, "");
+            // led.enable(true);
         });
 
         _wifi.on_connect_failed([=]() {

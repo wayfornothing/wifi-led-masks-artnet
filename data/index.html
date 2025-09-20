@@ -146,7 +146,7 @@
     </div>
 
     <script>
-        let ledCounter = 1;
+        let ledCounter = 0;
         const pins = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"];
 
         function addLED(initial = {}) {
@@ -155,32 +155,35 @@
             div.className = "led-block";
 
             div.innerHTML = `
-    <label>Name
-      <input type="text" class="led-name" value="${initial.name || ("LED" + ledCounter)}">
-    </label>
-    <label>Pin
-      <select class="led-pin">
-        ${pins.map(p => `<option ${initial.pin === p ? "selected" : ""}>${p}</option>`).join("")}
-      </select>
-    </label>
-    <div class="warning">⚠ D0 is not FADE compatible</div>
-    <label>Blink Interval (ms)
-      <input type="number" class="blink-int" value="${initial.blink_interval || 50}">
-    </label>
-    <label>Random Interval (ms)
-      <input type="number" class="rand-int" value="${initial.random_interval || 100}">
-    </label>
-    <label>Fade Interval (ms)
-      <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
-    </label>
-    <div class="led-actions">
-      <button onclick="testLED(this,'blink')">Blink</button>
-      <button onclick="testLED(this,'enable')">Enable</button>
-      <button onclick="testLED(this,'random')">Random</button>
-      <button onclick="testLED(this,'fade')">Fade</button>
-      <button class="btn-danger" onclick="removeLED(this)">❌ Remove</button>
-    </div>
-  `;
+            <label>Name
+                <input type="text" class="led-name" value="${initial.name || ("LED" + ledCounter)}">
+            </label>
+            <label>Pin
+                <select class="led-pin">
+                    ${pins.map(p => {
+                        const selected = (initial.pin ? initial.pin === p : p === "D1") ? "selected" : "";
+                        return `<option ${selected}>${p}</option>`;
+                    }).join("")}
+                </select>
+            </label>
+            <div class="warning">⚠ D0 is not FADE compatible</div>
+            <label>Blink Interval (ms)
+                <input type="number" class="blink-int" value="${initial.blink_interval || 50}">
+            </label>
+            <label>Random Interval (ms)
+                <input type="number" class="rand-int" value="${initial.random_interval || 100}">
+            </label>
+            <label>Fade Interval (ms)
+                <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
+            </label>
+            <div class="led-actions">
+                <button onclick="testLED(this,'blink')">Blink</button>
+                <button onclick="testLED(this,'enable')">Enable</button>
+                <button onclick="testLED(this,'random')">Random</button>
+                <button onclick="testLED(this,'fade')">Fade</button>
+                <button class="btn-danger" onclick="removeLED(this)">❌ Remove</button>
+            </div>
+        `;
 
             div.querySelector(".led-pin").addEventListener("change", function () {
                 const warn = div.querySelector(".warning");
@@ -217,17 +220,10 @@
         function saveConfig() {
             const leds = [...document.querySelectorAll(".led-block")].map(getLEDConfig);
             const config = {
-                // hostname: document.getElementById("hostname").value,
-                // ssid: document.getElementById("ssid").value,
                 universe: parseInt(document.getElementById("universe").value),
                 channel: parseInt(document.getElementById("channel").value),
                 leds: leds
             };
-
-            // const password = document.getElementById("password").value;
-            // if (password && password.trim() !== "") {
-            //     config.password = password;
-            // }
 
             fetch("/save", {
                 method: "POST",
@@ -240,27 +236,25 @@
             fetch("/leds.json")
                 .then(r => r.json())
                 .then(cfg => {
-                    // if (cfg.hostname) document.getElementById("hostname").value = cfg.hostname;
-                    // if (cfg.ssid) document.getElementById("ssid").value = cfg.ssid;
                     if (cfg.universe !== undefined) document.getElementById("universe").value = cfg.universe;
                     if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
-                    // if (cfg.password) document.getElementById("password").value = cfg.password;
 
                     document.getElementById("leds").innerHTML = "";
                     ledCounter = 0;
+
                     if (cfg.leds && cfg.leds.length > 0) {
                         cfg.leds.forEach(led => addLED(led));
-                    } else {
-                        addLED();
                     }
+                    // ⚠ Do NOT add a default LED if none exist
                 })
                 .catch(() => {
+                    // ⚠ Do NOT add a default LED if file missing or invalid
                     document.getElementById("leds").innerHTML = "";
                     ledCounter = 0;
-                    addLED();
                 });
         };
     </script>
+
 </body>
 
 </html>

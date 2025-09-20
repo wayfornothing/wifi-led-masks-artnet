@@ -55,21 +55,26 @@ public:
 
         });
 
-        // check config.json if exists
-        const auto LEDS_JSON = "/leds.json";
-        _server.on(LEDS_JSON, HTTP_GET, [&]() {
-            if (LittleFS.exists(LEDS_JSON)) {
-                File f = LittleFS.open(LEDS_JSON, "r");
-                _server.streamFile(f, "application/json");
-                f.close();
-                Serial.printf("%s LOAD OK\n", LEDS_JSON);
-            } else {
-                _server.send(200, "application/json", "{}");
-                Serial.printf("%s NEW\n", LEDS_JSON);
-            }
-        });
+        // config files checker
+        // std::vector<String> files = {"/wifi.json", "leds.json"};
+        // auto config_files = std::vector<String> ({ DeviceConfig::instance().LEDS_CONFIG_FILE, 
+        //                                            DeviceConfig::instance().WIFI_CONFIG_FILE });
+        // for (String config_file: files) {
+        //     // Serial.print(config_file);
+        //     _server.on(config_file, HTTP_GET, [&]() {
+        //         if (LittleFS.exists(config_file)) {
+        //             File f = LittleFS.open(config_file, "r");
+        //             _server.streamFile(f, "application/json");
+        //             f.close();
+        //             Serial.printf("%s LOAD OK\n", config_file.c_str());
+        //         } else {
+        //             _server.send(200, "application/json", "{}");
+        //             Serial.printf("%s NEW\n", config_file.c_str());
+        //         }
+        //     });
+        // }
 
-        // save config.json
+        // save leds.json
         _server.on("/save", HTTP_POST, [&]() {
             if (!_server.hasArg("plain")) {
                 _server.send(400, "text/plain", "No body");
@@ -78,13 +83,46 @@ public:
             }
 
             String body = _server.arg("plain");
-            File f = LittleFS.open(DeviceConfig::instance().LEDS_CONFIG_FILE, "w");
+            String file = DeviceConfig::instance().LEDS_CONFIG_FILE;
+            Serial.print(file);
+            File f = LittleFS.open(file, "w");
             f.print(body);
             f.close();
 
             Serial.println(body);
-            Serial.println("SAVED");
+            Serial.println("LEDS SAVED");
             _server.send(200, "text/plain", "Saved");
+        });
+
+
+
+        _server.on("/leds.json", HTTP_GET, [&]() {
+            if (LittleFS.exists("/leds.json")) {
+                File f = LittleFS.open("/leds.json", "r");
+                if (f) {
+                    _server.streamFile(f, "application/json");
+                    f.close();
+                } else {
+                    _server.send(500, "text/plain", "Failed to open /leds.json");
+                }
+            } else {
+                _server.send(200, "text/plain", "/leds.json file missing");  // return empty array if file missing
+            }
+
+        });
+
+        _server.on("/wifi.json", HTTP_GET, [&]() {
+            if (LittleFS.exists("/wifi.json")) {
+                File f = LittleFS.open("/wifi.json", "r");
+                if (f) {
+                    _server.streamFile(f, "application/json");
+                    f.close();
+                } else {
+                    _server.send(500, "text/plain", "Failed to open /wifi.json");
+                }
+            } else {
+                _server.send(200, "text/plain", "/wifi.json file missing");  // return empty array if file missing
+            }
         });
 
         // test LED actions (unchanged from before)
