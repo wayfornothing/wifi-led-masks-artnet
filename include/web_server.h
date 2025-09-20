@@ -5,6 +5,7 @@
 #include <ESP8266WebServer.h>
 
 #include "index.html.h"
+#include "led_device.h"
 #include "device_config.h"
 
 class ConfigWebServer {
@@ -13,23 +14,9 @@ public:
         : _server(80) {
     }
 
-    // void begin() {
-    //     _server.on("/", HTTP_GET, [&]() { _handle_root(); });
-    //     _server.on("/save", HTTP_POST, [&]() { _handle_save(); });
-    //     _server.on("/test", HTTP_GET, [&]() { _handle_test(); });
-
-    //     _server.begin();
-    //     Serial.println("Web server started!");
-    // }
-
     void tick() {
         _server.handleClient();
     }
-
-
-    void _handle_test() {
-    }
-
 
     uint8_t _pin_from_string(const String& pin_name) {
         if (pin_name == "D0") return D0;
@@ -46,8 +33,6 @@ public:
         return 0xFF;
     }
 
-
-
     void begin() {
         // main page
         _server.on("/", HTTP_GET, [&]() {
@@ -55,24 +40,6 @@ public:
 
         });
 
-        // config files checker
-        // std::vector<String> files = {"/wifi.json", "leds.json"};
-        // auto config_files = std::vector<String> ({ DeviceConfig::instance().LEDS_CONFIG_FILE, 
-        //                                            DeviceConfig::instance().WIFI_CONFIG_FILE });
-        // for (String config_file: files) {
-        //     // Serial.print(config_file);
-        //     _server.on(config_file, HTTP_GET, [&]() {
-        //         if (LittleFS.exists(config_file)) {
-        //             File f = LittleFS.open(config_file, "r");
-        //             _server.streamFile(f, "application/json");
-        //             f.close();
-        //             Serial.printf("%s LOAD OK\n", config_file.c_str());
-        //         } else {
-        //             _server.send(200, "application/json", "{}");
-        //             Serial.printf("%s NEW\n", config_file.c_str());
-        //         }
-        //     });
-        // }
 
         // save leds.json
         _server.on("/save", HTTP_POST, [&]() {
@@ -138,20 +105,40 @@ public:
             String mode = doc["mode"].as<String>();
             String pinStr = doc["pin"].as<String>();
             int pin = _pin_from_string(pinStr);
-            pinMode(pin, OUTPUT);
-
+            
             if (mode == "enable") {
-                //digitalWrite(pin, HIGH);
-            } else if (mode == "blink") {
+                static int en = 1;
+                LEDDevice led(pin, "test");
+                led.enable(en != 0);
+                en = !en;
+                // pinMode(pin, OUTPUT);
+                // digitalWrite(pin, !en);
+            } 
+            else if (mode == "blink") {
+                LEDDevice led(pin, "test");
+                led.start_blink();
+
             // digitalWrite(pin, HIGH);
             // delay(200);
             // digitalWrite(pin, LOW);
-            } else if (mode == "random") {
-            // analogWrite(pin, random(0, 1024));
+            } 
+            else if (mode == "random") {
+                LEDDevice led(pin, "test");
+                led.start_random();
+            // // analogWrite(pin, random(0, 1024));
             } else if (mode == "fade") {
+                LEDDevice led(pin, "test");
+                led.start_fade_in();
             // for (int i=0; i<=1023; i+=20) { analogWrite(pin, i); delay(10); }
             // for (int i=1023; i>=0; i-=20) { analogWrite(pin, i); delay(10); }
             }
+
+            Serial.println("--TEST--");
+            Serial.println(mode);
+            Serial.println(pinStr);
+            Serial.println(pin);
+            Serial.println();
+
 
             _server.send(200, "text/plain", "OK");
         });
@@ -161,46 +148,4 @@ public:
 
 private:
     ESP8266WebServer _server;
-
-    // void _handle_root() {
-        
-    //     String html = "<html><body><h1>ESP Config</h1>";
-    //     html += "<form method='POST' action='/save'>";
-        
-    //     DeviceConfig& cfg = DeviceConfig::instance();
-    //     html += "Hostname: <input name='hostname' value='" + cfg.get_hostname() + "'><br>";
-    //     html += "Universe: <input name='universe' value='" + String(cfg.get_universe()) + "'><br>";
-    //     html += "Channel: <input name='channel' value='" + String(cfg.get_channel()) + "'><br>";
-
-    //     int i = 0;
-    //     for (auto& led : cfg.get_leds()) {
-    //         html += "<h3>LED " + String(i + 1) + "</h3>";
-    //         html += "Pin name: <input name='led" + String(i) + "_name' value='" + led.name + "'><br>";
-    //         html += "Description: <input name='led" + String(i) + "_desc' value='" + led.desc + "'><br>";
-    //         i++;
-    //     }
-
-    //     html += "<br><input type='submit' value='Save'></form></body></html>";
-    //     _server.send(200, "text/html", html);
-    // }
-
-
-    // void _handle_save() {
-    //     DeviceConfig& cfg = DeviceConfig::instance();
-
-    //     cfg.set_hostname(_server.arg("hostname"));
-    //     cfg.set_universe(_server.arg("universe").toInt());
-    //     cfg.set_channel(_server.arg("channel").toInt());
-
-    //     int i = 0;
-    //     for (auto& led : cfg.get_leds()) {
-    //         led.name = _server.arg("led" + String(i) + "_name");
-    //         led.desc = _server.arg("led" + String(i) + "_desc");
-    //         i++;
-    //     }
-
-    //     cfg.save();
-    //     _server.send(200, "text/html",
-    //         "<html><body><h1>Saved, reboot device to apply!</h1><a href='/'>Back</a></body></html>");
-    // }
 };

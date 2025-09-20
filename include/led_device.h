@@ -29,7 +29,8 @@ public:
     }
 
     void start_blink() {
-        Serial.println(F("BLINK START"));
+        Serial.print(F("BLINK START PIN "));
+        Serial.println(_pin);
         _status = LED_STATUS_BLINK;
         _ticker.detach();
         _ticker.attach_ms(blink_interval_ms, +[] (LEDDevice* self) {
