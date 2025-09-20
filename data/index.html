@@ -142,74 +142,90 @@
     </div>
 
     <div style="text-align:center">
-        <button onclick="saveConfig()">💾 Save</button>
+        <button id="saveBtn" onclick="saveConfig()">💾 Save</button>
     </div>
 
     <script>
         let ledCounter = 0;
         const pins = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"];
 
+        function updateSaveButton() {
+            const hasLEDs = document.querySelectorAll(".led-block").length > 0;
+            console.log("updateSaveButton: hasLEDs =", hasLEDs);
+            document.getElementById("saveBtn").disabled = !hasLEDs;
+        }
+
         function addLED(initial = {}) {
             ledCounter++;
+            console.log("addLED: adding LED #", ledCounter, "initial =", initial);
+
             const div = document.createElement("div");
             div.className = "led-block";
 
             div.innerHTML = `
-            <label>Name
-                <input type="text" class="led-name" value="${initial.name || ("LED" + ledCounter)}">
-            </label>
-            <label>Pin
-                <select class="led-pin">
-                    ${pins.map(p => {
-                        const selected = (initial.pin ? initial.pin === p : p === "D1") ? "selected" : "";
-                        return `<option ${selected}>${p}</option>`;
-                    }).join("")}
-                </select>
-            </label>
-            <div class="warning">⚠ D0 is not FADE compatible</div>
-            <label>Blink Interval (ms)
-                <input type="number" class="blink-int" value="${initial.blink_interval || 50}">
-            </label>
-            <label>Random Interval (ms)
-                <input type="number" class="rand-int" value="${initial.random_interval || 100}">
-            </label>
-            <label>Fade Interval (ms)
-                <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
-            </label>
-            <div class="led-actions">
-                <button onclick="testLED(this,'blink')">Blink</button>
-                <button onclick="testLED(this,'enable')">Enable</button>
-                <button onclick="testLED(this,'random')">Random</button>
-                <button onclick="testLED(this,'fade')">Fade</button>
-                <button class="btn-danger" onclick="removeLED(this)">❌ Remove</button>
-            </div>
-        `;
+        <label>Name
+            <input type="text" class="led-name" value="${initial.name || "LED" + ledCounter}">
+        </label>
+        <label>Pin
+            <select class="led-pin">
+                ${pins.map(p => {
+                const selected = (initial.pin ? initial.pin === p : p === "D1") ? "selected" : "";
+                return `<option ${selected}>${p}</option>`;
+            }).join("")}
+            </select>
+        </label>
+        <div class="warning">⚠ D0 is not FADE compatible</div>
+        <label>Blink Interval (ms)
+            <input type="number" class="blink-int" value="${initial.blink_interval || 50}">
+        </label>
+        <label>Random Interval (ms)
+            <input type="number" class="rand-int" value="${initial.random_interval || 100}">
+        </label>
+        <label>Fade Interval (ms)
+            <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
+        </label>
+        <div class="led-actions">
+            <button onclick="testLED(this,'blink')">Blink</button>
+            <button onclick="testLED(this,'enable')">Enable</button>
+            <button onclick="testLED(this,'random')">Random</button>
+            <button onclick="testLED(this,'fade')">Fade</button>
+            <button class="btn-danger" onclick="removeLED(this)">❌ Remove</button>
+        </div>
+    `;
 
             div.querySelector(".led-pin").addEventListener("change", function () {
                 const warn = div.querySelector(".warning");
                 warn.style.display = (this.value === "D0") ? "block" : "none";
+                console.log("LED pin changed to", this.value);
             });
 
             document.getElementById("leds").appendChild(div);
+            console.log("LED block appended to DOM");
+            updateSaveButton();
         }
 
         function removeLED(btn) {
+            console.log("removeLED called");
             btn.closest(".led-block").remove();
+            updateSaveButton();
         }
 
         function getLEDConfig(div) {
-            return {
+            const config = {
                 name: div.querySelector(".led-name").value,
                 pin: div.querySelector(".led-pin").value,
                 blink_interval: parseInt(div.querySelector(".blink-int").value),
                 random_interval: parseInt(div.querySelector(".rand-int").value),
                 fade_interval: parseInt(div.querySelector(".fade-int").value)
             };
+            console.log("getLEDConfig:", config);
+            return config;
         }
 
         function testLED(btn, mode) {
             const div = btn.closest(".led-block");
             const led = getLEDConfig(div);
+            console.log("testLED mode:", mode, "led:", led);
             fetch("/test", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -224,36 +240,61 @@
                 channel: parseInt(document.getElementById("channel").value),
                 leds: leds
             };
+            console.log("saveConfig: saving config", config);
 
             fetch("/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(config)
-            }).then(() => alert("Config saved"));
+            }).then(() => console.log("Config saved"));
         }
 
         window.onload = () => {
+            console.log("window.onload: fetching /leds.json");
             fetch("/leds.json")
-                .then(r => r.json())
-                .then(cfg => {
-                    if (cfg.universe !== undefined) document.getElementById("universe").value = cfg.universe;
-                    if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
-
-                    document.getElementById("leds").innerHTML = "";
-                    ledCounter = 0;
-
-                    if (cfg.leds && cfg.leds.length > 0) {
-                        cfg.leds.forEach(led => addLED(led));
-                    }
-                    // ⚠ Do NOT add a default LED if none exist
+                .then(r => {
+                    console.log("Fetch response:", r);
+                    return r.text();
                 })
-                .catch(() => {
-                    // ⚠ Do NOT add a default LED if file missing or invalid
+                .then(text => {
+                    console.log("Raw leds.json text:", text);
+                    let cfg;
+                    try {
+                        cfg = JSON.parse(text);
+                        console.log("Parsed JSON:", cfg);
+                    } catch (e) {
+                        console.error("Failed to parse leds.json:", e);
+                        cfg = {};
+                    }
+
+                    document.getElementById("universe").value = cfg.universe ?? 0;
+                    document.getElementById("channel").value = cfg.channel ?? 1;
+
                     document.getElementById("leds").innerHTML = "";
                     ledCounter = 0;
+
+                    if (cfg.leds && Array.isArray(cfg.leds) && cfg.leds.length > 0) {
+                        console.log("Creating LED blocks for", cfg.leds.length, "LED(s)");
+                        cfg.leds.forEach((led, idx) => {
+                            console.log("Adding LED index", idx, led);
+                            addLED(led);
+                        });
+                    } else {
+                        console.log("No LEDs found in JSON, not adding default block");
+                    }
+
+                    updateSaveButton();
+                })
+                .catch(err => {
+                    console.error("Failed to fetch /leds.json:", err);
+                    document.getElementById("leds").innerHTML = "";
+                    ledCounter = 0;
+                    updateSaveButton();
                 });
         };
     </script>
+
+
 
 </body>
 
