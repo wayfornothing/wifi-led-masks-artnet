@@ -268,33 +268,62 @@ private:
                     break;
                 case '*':
                     for (auto& led : _leds) {
-                        led.random_interval_ms += 10;
+                        led.random_interval_ms += 5;
+                        if (led.random_interval_ms > 200) {
+                            led.random_interval_ms = 200;
+                        }
                         Serial.printf("RITV: %dms\n", led.random_interval_ms);
                         led.start_random();
                     }
                     break;
                 case '/':
                     for (auto& led : _leds) {
-                        led.random_interval_ms -= 10;
+                        led.random_interval_ms -= 5;
+                        if (led.random_interval_ms < 5) {
+                            led.random_interval_ms = 5;
+                        }
                         Serial.printf("RITV: %dms\n", led.random_interval_ms);
                         led.start_random();
                     }
                     break;
                 case '+':
                     for (auto& led : _leds) {
-                        led.blink_interval_ms += 10;
+                        led.blink_interval_ms += 5;
+                        if (led.blink_interval_ms > 200) {
+                            led.blink_interval_ms = 200;
+                        }
                         Serial.printf("BITV: %dms\n", led.blink_interval_ms);
                         led.start_blink();
                     }
                     break;
                 case '-':
                     for (auto& led : _leds) {
-                        led.blink_interval_ms -= 10;
+                        led.blink_interval_ms -= 5;
+                        if (led.blink_interval_ms < 5) {
+                            led.blink_interval_ms = 5;
+                        }
                         Serial.printf("BITV: %dms\n", led.blink_interval_ms);
                         led.start_blink();
                     }
                     break;
-
+                case 'm':
+                    for (auto& led : _leds) {
+                        led.fade_interval_ms += 1;
+                        if (led.fade_interval_ms > 200) {
+                            led.fade_interval_ms = 200;
+                        }
+                        Serial.printf("FITV: %dms\n", led.fade_interval_ms);
+                    }
+                    break;
+                case 'l':
+                    for (auto& led : _leds) {
+                        led.fade_interval_ms -= 1;
+                        if (led.fade_interval_ms < 1) {
+                            led.fade_interval_ms = 1;
+                        }
+                        Serial.printf("LITV: %dms\n", led.fade_interval_ms);
+                    }
+                    break;
             }
         }
     }

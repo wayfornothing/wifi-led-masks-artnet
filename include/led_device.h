@@ -11,7 +11,9 @@ typedef enum {
     LED_STATUS_RANDOM
 } eLEDStatus;   
 
-#define FADE_MAX (512)
+// TODO: config thru web, this depends on LED type
+#define FADE_MIN (0)
+#define FADE_MAX (1024)
 
 class LEDDevice {
 
@@ -64,7 +66,7 @@ public:
         Serial.println(F("FADE OUT START"));
         enable(true);
         _status = LED_STATUS_FADE_OUT;
-        _duty = 0;
+        _duty = FADE_MIN;
         _ticker.attach_ms(fade_interval_ms, +[] (LEDDevice* self) {
             self->_fade_out();
         }, this);
@@ -85,7 +87,7 @@ private:
     uint8_t _pin;
     Ticker _ticker;
     eLEDStatus _status;
-    uint16_t _duty = 0;
+    uint16_t _duty = FADE_MIN;
     
     void _toggle() {
         digitalWrite(_pin, !digitalRead(_pin));
@@ -102,7 +104,7 @@ private:
         if (_duty == FADE_MAX) {
             // fade finished
             Serial.println(F("FADE OUT ENDED"));
-            _duty = 0;
+            _duty = FADE_MIN;
             _status = LED_STATUS_IDLE;
             _ticker.detach();
         }
@@ -111,7 +113,7 @@ private:
     void _fade_in() {
         // Serial.println(duty);
         analogWrite(_pin, _duty--);
-        if (_duty == 0) {
+        if (_duty == FADE_MIN) {
             // fade finished
             Serial.println(F("FADE IN ENDED"));
             _duty = FADE_MAX;
