@@ -28,8 +28,8 @@ private:
     
     public:
     Device() :
-    _wifi(10'000, 2'000, 20, LED_BUILTIN),
-    _web(ConfigWebServer()) {
+        _wifi(10'000, 2'000, 20, LED_BUILTIN),
+        _web(ConfigWebServer()) {
     }
     
     void begin() {
@@ -37,8 +37,9 @@ private:
         DeviceConfig& _config = DeviceConfig::instance();
         
         // at startup, turn all leds OFF
-        for (auto led : _config.get_leds()) {
-            _leds.push_back(LEDDevice(led.pin, led.name));
+        for (auto& led_cfg : _config.get_leds()) {
+            Serial.printf("Will create LED %s at pin %d\n", led_cfg.name.c_str(), led_cfg.pin);
+            _leds.push_back(LEDDevice(led_cfg.pin, led_cfg.name));
         }
 
         _wifi.on_disconnect([=]() {
@@ -49,7 +50,7 @@ private:
             }
         });
 
-        _wifi.on_connect([=]() {
+        _wifi.on_connect([&]() {
             Serial.println("WiFi connected!");
             // network restored, turn all the pins OFF
             for (auto& led : _leds) {
@@ -60,22 +61,17 @@ private:
             _web.begin();
 
             // wait for artnet messages
-            DeviceConfig& cfg = DeviceConfig::instance();
-            _wifi.set_hostname(cfg.get_hostname().c_str());
-            if (MDNS.begin(cfg.get_hostname())) {
+            // DeviceConfig& cfg = DeviceConfig::instance();
+            const String hostname = _config.get_hostname();
+            _wifi.set_hostname(hostname.c_str());
+            if (MDNS.begin(hostname)) {
                 Serial.print(F("mDNS responder started, browse to: "));
                 Serial.print(F("http://"));
-                Serial.print(cfg.get_hostname());
+                Serial.print(hostname);
                 Serial.println(F(".local"));
             }
 
             _udp.begin(ARTNET_PORT);
-
-            Serial.print(F("Device name: "));
-            Serial.println(cfg.get_hostname());
-
-            LEDDevice led(D4, "");
-            led.enable(true);
         });
 
         _wifi.on_connect_failed([=]() {

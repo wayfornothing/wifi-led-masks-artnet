@@ -6,3 +6,4 @@
 
 include/secrets.h
 include/version.h
+include/*.html.h

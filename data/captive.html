@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WiFi Configuration</title>
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --accent: #0077cc;
+            --border: #ddd;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #333;
+            padding: 1rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.25rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        button,
+        input[type=submit] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover,
+        input[type=submit]:hover {
+            background: #005fa3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>WiFi Config</h1>
+    <div class="card">
+        <form method="POST" action="/save">
+            <label>
+                SSID
+                <input name="ssid" placeholder="Enter WiFi SSID">
+            </label>
+            <label>
+                Password
+                <input name="password" type="password" placeholder="Enter WiFi password">
+            </label>
+            <label>
+                Device name
+                <input name="hostname" placeholder="ESP8266 device name">
+            </label>
+            <input type="submit" value="💾 Save">
+        </form>
+    </div>
+</body>
+
+</html>

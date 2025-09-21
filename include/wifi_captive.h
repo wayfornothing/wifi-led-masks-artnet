@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 
 #include "device_config.h"
+#include "captive.html.h"
 
 class WiFiCaptivePortal {
 
@@ -33,14 +34,14 @@ class WiFiCaptivePortal {
         });
 
         server.on("/", HTTP_GET, [&server]() {
-            String page = "<html><body><h1>WiFi Config</h1>"
-                          "<form method='POST' action='/save'>"
-                          "SSID: <input name='ssid'><br>"
-                          "Password: <input name='password' type='password'><br>"
-                          "Device name: <input name='hostname'><br>"
-                          "<input type='submit' value='Save'>"
-                          "</form></body></html>";
-            server.send(200, "text/html", page);
+            // String page = "<html><body><h1>WiFi Config</h1>"
+            //               "<form method='POST' action='/save'>"
+            //               "SSID: <input name='ssid'><br>"
+            //               "Password: <input name='password' type='password'><br>"
+            //               "Device name: <input name='hostname'><br>"
+            //               "<input type='submit' value='Save'>"
+            //               "</form></body></html>";
+            server.send(200, "text/html", CAPTIVE_HTML);
 
         });
         server.on("/save", HTTP_POST, [&server]() {
@@ -52,8 +53,7 @@ class WiFiCaptivePortal {
             cfg.set_SSID(ssid);
             cfg.set_password(pass);
             cfg.set_hostname(name);
-
-            cfg.save();
+            cfg.save_wifi();
 
             server.send(200, "text/html", "<html><body><h1>Saved. Rebooting...</h1></body></html>");
             delay(1000);

@@ -26,13 +26,16 @@ public:
         _pin(pin), 
         _status(LED_STATUS_IDLE) {
         pinMode(_pin, OUTPUT);
+        Serial.printf("Created LED %s at pin %d\n", name.c_str(), pin);
     }
 
     void start_blink() {
-        Serial.println(F("BLINK START"));
+        Serial.print(F("BLINK START PIN "));
+        Serial.println(_pin);
         _status = LED_STATUS_BLINK;
         _ticker.detach();
         _ticker.attach_ms(blink_interval_ms, +[] (LEDDevice* self) {
+            // Serial.print(".");
             self->_toggle();
         }, this);
     }
@@ -70,26 +73,27 @@ public:
     void enable(bool enabled) {
         _ticker.detach();
         _status = LED_STATUS_IDLE;
-        digitalWrite(_pin, enabled ? LOW : HIGH);
+        Serial.printf("LED %s (pin %d) %s", name.c_str(), _pin, enabled ? "ON" : "OFF");
+        digitalWrite(_pin, enabled ? HIGH : LOW);
     }
 
     void stop_blink() {
         _ticker.detach();
     }
-    
+
 private:
     uint8_t _pin;
     Ticker _ticker;
     eLEDStatus _status;
     uint16_t _duty = 0;
     
+    void _toggle() {
+        digitalWrite(_pin, !digitalRead(_pin));
+    }
+
     void _randomize() {
         bool enabled = rand() > (RAND_MAX / 2); // TODO: ratio should be adjustable
         digitalWrite(_pin, enabled ? LOW : HIGH);
-    }
-
-    void _toggle() {
-        digitalWrite(_pin, !digitalRead(_pin));
     }
 
     void _fade_out() {
