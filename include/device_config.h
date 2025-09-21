@@ -26,20 +26,38 @@ private:
 
     struct LEDConfig {
         String name;
-        String desc;
-        uint8_t pin;
+        // String pin_name;
+        // String desc;
+        int pin;
         uint16_t blink_ms;
         uint16_t random_ms;
         uint16_t fade_ms;
     };
 
-    std::vector<LEDConfig> leds;
+    std::vector<LEDConfig> _leds;
 
 public:
     static DeviceConfig& instance() {
         static DeviceConfig _instance;
         return _instance;
     }
+
+
+    static uint8_t pin_from_string(const String& pin_name) {
+        if (pin_name == "D0") return D0;
+        if (pin_name == "D1") return D1;
+        if (pin_name == "D2") return D2;
+        if (pin_name == "D3") return D3;
+        if (pin_name == "D4") return D4;
+        if (pin_name == "D5") return D5;
+        if (pin_name == "D6") return D6;
+        if (pin_name == "D7") return D7;
+        if (pin_name == "D8") return D8;
+        if (pin_name == "D9") return D9;
+        if (pin_name == "D10") return D10;
+        return 0xFF;
+    }
+
 
     bool load() {
         if (!LittleFS.begin()) {
@@ -98,17 +116,18 @@ public:
         universe = leds_json["universe"]   | 0;
         channel  = leds_json["channel"]    | 1;
 
-        leds.clear();
+        _leds.clear();
         if (leds_json.containsKey("leds")) {
             for (JsonObject led : leds_json["leds"].as<JsonArray>()) {
                 LEDConfig lc;
-                lc.name           = (const char*) led["name"];
-                lc.desc           = (const char*) led["desc"];
-                lc.pin            = led["pin"];
+                lc.name      = (const char*) led["name"];
+                // lc.desc      = (const char*) led["desc"];
+                // lc.pin_name  = led["pin"];
+                lc.pin       = pin_from_string(led["pin"]);
                 lc.blink_ms  = led["blink_ms"]  | 0;
                 lc.random_ms = led["random_ms"] | 0;
                 lc.fade_ms   = led["fade_ms"]   | 0;
-                leds.push_back(lc);
+                _leds.push_back(lc);
             }
         }
         
@@ -149,44 +168,59 @@ public:
         debug();
         return true;
     }
-        
-    bool save_leds() {
-        if (!LittleFS.begin()) {
-             // TODO: error mgmt
-            Serial.println("LEDS: LFS ERR");
-            return false;
+    
+    
+    bool save_leds(String& raw_json) {
+        bool ret = false;
+        String file = LEDS_CONFIG_FILE;
+        Serial.print(file);
+        File f = LittleFS.open(file, "w");
+        if (f) {
+            f.print(raw_json);
+            f.close();
+            Serial.println(raw_json);
+            Serial.println("LEDS SAVED");
+            ret = true;
         }
-
-        DynamicJsonDocument doc(2048);
-        doc["universe"] = universe;
-        doc["channel"]  = channel;
-
-        JsonArray ledsArr = doc.createNestedArray("leds");
-        for (auto& l : leds) {
-            JsonObject led = ledsArr.createNestedObject();
-            led["name"]         = l.name;
-            led["desc"]         = l.desc;
-            led["pin"]          = l.pin;
-            led["blink_ms"]     = l.blink_ms;
-            led["random_ms"]    = l.random_ms;
-            led["fade_ms"]      = l.fade_ms;
-        }
-
-        File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
-        if (!f) {
-            // TODO: error mgmt
-            Serial.println("SAVE: LFS OPEN ERR");
-            return false;
-        }
-        serializeJson(doc, f);
-        f.close();
-
-        Serial.println("LEDS: OK");
-debug();
-        return true;
+        return ret;
     }
+    //     if (!LittleFS.begin()) {
+    //          // TODO: error mgmt
+    //         Serial.println("LEDS: LFS ERR");
+    //         return false;
+    //     }
+
+    //     DynamicJsonDocument doc(2048);
+    //     doc["universe"] = universe;
+    //     doc["channel"]  = channel;
+
+    //     JsonArray leds_json = doc.createNestedArray("leds");
+    //     for (auto& led : _leds) {
+    //         JsonObject led_json = leds_json.createNestedObject();
+    //         led_json["name"]         = led.name;
+    //         // led_json["desc"]         = led.desc;
+    //         led_json["pin"]          = led.pin;
+    //         led_json["blink_ms"]     = led.blink_ms;
+    //         led_json["random_ms"]    = led.random_ms;
+    //         led_json["fade_ms"]      = led.fade_ms;
+    //     }
+
+    //     File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
+    //     if (!f) {
+    //         // TODO: error mgmt
+    //         Serial.println("SAVE: LFS OPEN ERR");
+    //         return false;
+    //     }
+    //     serializeJson(doc, f);
+    //     f.close();
+
+    //     Serial.println("LEDS: OK");
+    //     debug();
+    //     return true;
+    // }
 
     // Accessors
+    // TODO: meh
     const String& get_hostname() const { return hostname; }
     void set_hostname(const String& h) { hostname = h; }
 
@@ -202,5 +236,5 @@ debug();
     uint16_t get_channel() const { return channel; }
     void set_channel(uint16_t c) { channel = c; }
 
-    std::vector<LEDConfig>& get_leds() { return leds; }
+    std::vector<LEDConfig>& get_leds() { return _leds; }
 };

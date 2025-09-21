@@ -18,21 +18,6 @@ public:
         _server.handleClient();
     }
 
-    uint8_t _pin_from_string(const String& pin_name) {
-        if (pin_name == "D0") return D0;
-        if (pin_name == "D1") return D1;
-        if (pin_name == "D2") return D2;
-        if (pin_name == "D3") return D3;
-        if (pin_name == "D4") return D4;
-        if (pin_name == "D5") return D5;
-        if (pin_name == "D6") return D6;
-        if (pin_name == "D7") return D7;
-        if (pin_name == "D8") return D8;
-        if (pin_name == "D9") return D9;
-        if (pin_name == "D10") return D10;
-        return 0xFF;
-    }
-
     void begin() {
         // main page
         _server.on("/", HTTP_GET, [&]() {
@@ -50,14 +35,9 @@ public:
             }
 
             String body = _server.arg("plain");
-            String file = DeviceConfig::instance().LEDS_CONFIG_FILE;
-            Serial.print(file);
-            File f = LittleFS.open(file, "w");
-            f.print(body);
-            f.close();
 
-            Serial.println(body);
-            Serial.println("LEDS SAVED");
+            DeviceConfig::instance().save_leds(body);
+
             _server.send(200, "text/plain", "Saved");
         });
 
@@ -103,24 +83,21 @@ public:
             StaticJsonDocument<512> doc;
             deserializeJson(doc, body);
             String mode = doc["mode"].as<String>();
-            String pinStr = doc["pin"].as<String>();
-            int pin = _pin_from_string(pinStr);
-            
+            String pin_name = doc["pin"].as<String>();
+            int pin = DeviceConfig::pin_from_string(pin_name);
+
+            Serial.println("--TEST--");
+            Serial.println(mode);
+            Serial.println(pin_name);
+            Serial.println(pin);
+
             if (mode == "enable") {
-                static int en = 1;
                 LEDDevice led(pin, "test");
-                led.enable(en != 0);
-                en = !en;
-                // pinMode(pin, OUTPUT);
-                // digitalWrite(pin, !en);
+                led.toggle();
             } 
             else if (mode == "blink") {
                 LEDDevice led(pin, "test");
                 led.start_blink();
-
-            // digitalWrite(pin, HIGH);
-            // delay(200);
-            // digitalWrite(pin, LOW);
             } 
             else if (mode == "random") {
                 LEDDevice led(pin, "test");
@@ -132,14 +109,6 @@ public:
             // for (int i=0; i<=1023; i+=20) { analogWrite(pin, i); delay(10); }
             // for (int i=1023; i>=0; i-=20) { analogWrite(pin, i); delay(10); }
             }
-
-            Serial.println("--TEST--");
-            Serial.println(mode);
-            Serial.println(pinStr);
-            Serial.println(pin);
-            Serial.println();
-
-
             _server.send(200, "text/plain", "OK");
         });
 

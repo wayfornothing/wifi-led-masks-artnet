@@ -245,8 +245,8 @@
 
         function getLEDConfig(div) {
             return {
-                name: div.querySelector(".led-name").value,
-                pin: div.querySelector(".led-pin").value,
+                name: div.querySelector(".led-name").value, // description
+                pin: div.querySelector(".led-pin").value, // WARNING this is the pin NAME, not integer value !!!
                 blink_interval: parseInt(div.querySelector(".blink-int").value),
                 random_interval: parseInt(div.querySelector(".rand-int").value),
                 fade_interval: parseInt(div.querySelector(".fade-int").value)
