@@ -17,3 +17,17 @@ pc data bitfield
 
 - Push button on reset to enable captive portal (captive AP is `WFN-Config`)
 - Auto-reconnect to configured WiFi network
+
+
+## TODO
+
+
+
+Commands per LED:
+
+ENABLE
+DISABLE
+BLINK,interval
+RANDOM,interval,midpoint
+FADE_IN,interval,curve
+FADE_OUT,interval,curve

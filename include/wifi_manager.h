@@ -80,8 +80,7 @@ public:
 
     void connect() {
         
-        LEDDevice led(_pin_ui, "D4");
-        led.blink_interval_ms = 200;
+        LEDDevice led(_pin_ui, "D4", 200);
         
         DeviceConfig& cfg = DeviceConfig::instance();
         Serial.printf("Connecting to %s", cfg.get_SSID().c_str());

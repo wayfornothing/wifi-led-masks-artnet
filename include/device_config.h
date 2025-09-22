@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include "led_device.h"
+
 class DeviceConfig {
 public:    
     const String WIFI_CONFIG_FILE = "/wifi.json";
@@ -24,17 +26,16 @@ private:
     uint16_t universe;
     uint16_t channel;
 
-    struct LEDConfig {
-        String name;
-        // String pin_name;
-        // String desc;
-        int pin;
-        uint16_t blink_ms;
-        uint16_t random_ms;
-        uint16_t fade_ms;
-    };
+    // struct LEDConfig {
+    //     String name; // user's description
+    //     int pin; // hardware pin
+    //     uint16_t blink_ms;
+    //     uint16_t random_ms;
+    //     uint8_t random_mid;
+    //     uint16_t fade_ms;
+    // };
 
-    std::vector<LEDConfig> _leds;
+    std::vector<LEDDevice> _leds;
 
 public:
     static DeviceConfig& instance() {
@@ -42,7 +43,7 @@ public:
         return _instance;
     }
 
-
+    #define PIN_INVALID (0xff)
     static uint8_t pin_from_string(const String& pin_name) {
         if (pin_name == "D0") return D0;
         if (pin_name == "D1") return D1;
@@ -55,7 +56,7 @@ public:
         if (pin_name == "D8") return D8;
         if (pin_name == "D9") return D9;
         if (pin_name == "D10") return D10;
-        return 0xFF;
+        return PIN_INVALID;
     }
 
 
@@ -118,16 +119,22 @@ public:
 
         _leds.clear();
         if (leds_json.containsKey("leds")) {
-            for (JsonObject led : leds_json["leds"].as<JsonArray>()) {
-                LEDConfig lc;
-                lc.name      = (const char*) led["name"];
-                // lc.desc      = (const char*) led["desc"];
-                // lc.pin_name  = led["pin"];
-                lc.pin       = pin_from_string(led["pin"]);
-                lc.blink_ms  = led["blink_ms"]  | 0;
-                lc.random_ms = led["random_ms"] | 0;
-                lc.fade_ms   = led["fade_ms"]   | 0;
-                _leds.push_back(lc);
+            for (JsonObject led_json : leds_json["leds"].as<JsonArray>()) {
+                // LEDConfig lc;
+                auto name = led_json["name"];
+                auto pin = pin_from_string(led_json["pin"]);
+                if (pin != PIN_INVALID) {
+                    LEDDevice led = LEDDevice(pin, 
+                                              name, 
+                                              led_json["blink_interval"]  | DEFAULT_BLINK_INTERVAL_MS,
+                                              led_json["random_interval"] | DEFAULT_RANDOM_INTERVAL_MS,
+                                              led_json["random_midpoint"] | DEFAULT_RANDOM_MIDPOINT,
+                                              led_json["fade_interval"]   | DEFAULT_FADE_INTERVAL_MS);
+                    _leds.push_back(led);
+                }
+                else {
+                    // TODO: err mgmt
+                }
             }
         }
         
@@ -184,43 +191,9 @@ public:
         }
         return ret;
     }
-    //     if (!LittleFS.begin()) {
-    //          // TODO: error mgmt
-    //         Serial.println("LEDS: LFS ERR");
-    //         return false;
-    //     }
-
-    //     DynamicJsonDocument doc(2048);
-    //     doc["universe"] = universe;
-    //     doc["channel"]  = channel;
-
-    //     JsonArray leds_json = doc.createNestedArray("leds");
-    //     for (auto& led : _leds) {
-    //         JsonObject led_json = leds_json.createNestedObject();
-    //         led_json["name"]         = led.name;
-    //         // led_json["desc"]         = led.desc;
-    //         led_json["pin"]          = led.pin;
-    //         led_json["blink_ms"]     = led.blink_ms;
-    //         led_json["random_ms"]    = led.random_ms;
-    //         led_json["fade_ms"]      = led.fade_ms;
-    //     }
-
-    //     File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
-    //     if (!f) {
-    //         // TODO: error mgmt
-    //         Serial.println("SAVE: LFS OPEN ERR");
-    //         return false;
-    //     }
-    //     serializeJson(doc, f);
-    //     f.close();
-
-    //     Serial.println("LEDS: OK");
-    //     debug();
-    //     return true;
-    // }
-
+    
     // Accessors
-    // TODO: meh
+    // TODO: meh ?
     const String& get_hostname() const { return hostname; }
     void set_hostname(const String& h) { hostname = h; }
 
@@ -236,5 +209,5 @@ public:
     uint16_t get_channel() const { return channel; }
     void set_channel(uint16_t c) { channel = c; }
 
-    std::vector<LEDConfig>& get_leds() { return _leds; }
+    std::vector<LEDDevice>& get_leds() { return _leds; }
 };

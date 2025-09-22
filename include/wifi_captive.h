@@ -18,7 +18,6 @@ class WiFiCaptivePortal {
     static void start_captive_portal() {
         
         LEDDevice led(LED_BUILTIN, "");
-        led.blink_interval_ms = 50;
         led.start_blink();
 
         ESP8266WebServer server(80);
