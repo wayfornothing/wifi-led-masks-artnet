@@ -37,9 +37,15 @@ private:
         DeviceConfig& _config = DeviceConfig::instance();
         
         // at startup, turn all leds OFF
-        for (auto& led_cfg : _config.get_leds()) {
-            Serial.printf("Will create LED %s at pin %d\n", led_cfg.name.c_str(), led_cfg.pin);
-            _leds.push_back(LEDDevice(led_cfg.pin, led_cfg.name));
+        for (auto& led : _config.get_leds()) {
+            Serial.printf("Will create LED %s\n", led.name.c_str());
+            
+            // LEDDevice led = LEDDevice(led_cfg.pin, led_cfg.name);
+            // led.blink_interval_ms = led_cfg.blink_ms;
+            // led.random_interval_ms = led_cfg.random_ms;
+            // led.random_midpoint = led_cfg.random_midpoint;
+            // led.fade_interval_ms = led_cfg.fade_ms;
+            _leds.push_back(led);
         }
 
         _wifi.on_disconnect([=]() {
@@ -168,7 +174,7 @@ private:
                 int i = 0;
                 for (auto& led : _leds) {
                     if (TEST_BIT(leds_bitfield, i)) {
-                        Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                        // Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                         led.enable(enabled);
                     }
                     i++;
@@ -179,7 +185,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_blink();
                         }
                         i++;
@@ -192,7 +198,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_fade_in();
                         }
                         i++;
@@ -204,7 +210,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_fade_out();
                         }
                         i++;
@@ -217,7 +223,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_random();
                         }
                         i++;
@@ -268,60 +274,36 @@ private:
                     break;
                 case '*':
                     for (auto& led : _leds) {
-                        led.random_interval_ms += 5;
-                        if (led.random_interval_ms > 200) {
-                            led.random_interval_ms = 200;
-                        }
-                        Serial.printf("RITV: %dms\n", led.random_interval_ms);
+                        led.inc_random_interval_ms(5);
                         led.start_random();
                     }
                     break;
                 case '/':
                     for (auto& led : _leds) {
-                        led.random_interval_ms -= 5;
-                        if (led.random_interval_ms < 5) {
-                            led.random_interval_ms = 5;
-                        }
-                        Serial.printf("RITV: %dms\n", led.random_interval_ms);
+                        led.inc_random_interval_ms(-5);
                         led.start_random();
                     }
                     break;
                 case '+':
                     for (auto& led : _leds) {
-                        led.blink_interval_ms += 5;
-                        if (led.blink_interval_ms > 200) {
-                            led.blink_interval_ms = 200;
-                        }
-                        Serial.printf("BITV: %dms\n", led.blink_interval_ms);
+                        led.inc_blink_interval_ms(5);
                         led.start_blink();
                     }
                     break;
                 case '-':
                     for (auto& led : _leds) {
-                        led.blink_interval_ms -= 5;
-                        if (led.blink_interval_ms < 5) {
-                            led.blink_interval_ms = 5;
-                        }
-                        Serial.printf("BITV: %dms\n", led.blink_interval_ms);
+                        led.inc_blink_interval_ms(-5);
                         led.start_blink();
                     }
                     break;
                 case 'm':
                     for (auto& led : _leds) {
-                        led.fade_interval_ms += 1;
-                        if (led.fade_interval_ms > 200) {
-                            led.fade_interval_ms = 200;
-                        }
-                        Serial.printf("FITV: %dms\n", led.fade_interval_ms);
+                        led.inc_fade_interval_ms(1);
                     }
                     break;
                 case 'l':
                     for (auto& led : _leds) {
-                        led.fade_interval_ms -= 1;
-                        if (led.fade_interval_ms < 1) {
-                            led.fade_interval_ms = 1;
-                        }
-                        Serial.printf("LITV: %dms\n", led.fade_interval_ms);
+                        led.inc_fade_interval_ms(-1);
                     }
                     break;
             }

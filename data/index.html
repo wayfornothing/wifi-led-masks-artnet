@@ -136,6 +136,26 @@
             flex-wrap: wrap;
         }
 
+        .slider-container {
+            position: relative;
+            margin-bottom: 0.75rem;
+        }
+
+        .slider-bubble {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            display: none;
+            pointer-events: none;
+        }
+
         @media (min-width: 600px) {
             .form-grid {
                 display: grid;
@@ -203,6 +223,14 @@
           <label>Random Interval (ms)
             <input type="number" class="rand-int" value="${initial.random_interval || 100}">
           </label>
+          
+          <label>Random Midpoint %
+            <div class="slider-container">
+                <input type="range" class="rand-mid" min="0" max="100" value="${initial.random_midpoint || 50}">
+                <span class="slider-bubble">${initial.random_midpoint || 50}</span>
+            </div>
+          </label>
+          
           <label>Fade Interval (ms)
             <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
           </label>
@@ -215,6 +243,36 @@
           </div>
         </div>
       `;
+
+            const sliderContainer = div.querySelector(".slider-container");
+            const sliderInput = sliderContainer.querySelector(".rand-mid");
+            const bubble = sliderContainer.querySelector(".slider-bubble");
+            function updateBubble() {
+                const val = sliderInput.value;
+                bubble.textContent = val;
+
+                // Position bubble above thumb
+                const percent = (val - sliderInput.min) / (sliderInput.max - sliderInput.min);
+                const sliderWidth = sliderInput.offsetWidth;
+                bubble.style.left = `${percent * sliderWidth}px`;
+            }
+
+            // Show bubble on drag / touch
+            sliderInput.addEventListener("mousedown", () => {
+                bubble.style.display = "block";
+                updateBubble();
+            });
+            sliderInput.addEventListener("touchstart", () => {
+                bubble.style.display = "block";
+                updateBubble();
+            });
+            // Update bubble while moving
+            sliderInput.addEventListener("input", updateBubble);
+
+            // Hide bubble on release
+            sliderInput.addEventListener("mouseup", () => { bubble.style.display = "none"; });
+            sliderInput.addEventListener("touchend", () => { bubble.style.display = "none"; });
+            sliderInput.addEventListener("mouseleave", () => { bubble.style.display = "none"; }); // optional
 
             // Expand/collapse toggle
             const toggleBtn = div.querySelector(".toggle-btn");
@@ -249,6 +307,7 @@
                 pin: div.querySelector(".led-pin").value, // WARNING this is the pin NAME, not integer value !!!
                 blink_interval: parseInt(div.querySelector(".blink-int").value),
                 random_interval: parseInt(div.querySelector(".rand-int").value),
+                random_midpoint: parseInt(div.querySelector(".rand-mid").value),
                 fade_interval: parseInt(div.querySelector(".fade-int").value)
             };
         }

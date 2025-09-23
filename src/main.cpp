@@ -5,7 +5,7 @@
 #include "wifi_captive.h"
 
 Device _device;
-#define PIN_RESET_BUTTON (D7) // TODO: use D0 with a reistor tied to 3.3v, and a pushbutton tied to GND
+#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
 
 void setup() {
     Serial.begin(9600);
@@ -13,7 +13,7 @@ void setup() {
 
     Serial.printf("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
 
-    pinMode(PIN_RESET_BUTTON, INPUT_PULLUP /* TODO: use INPUT with D0 pin */);
+    pinMode(PIN_RESET_BUTTON, INPUT /* TODO: use INPUT with D0 pin */);
     delay(100);
     if (digitalRead(PIN_RESET_BUTTON) == LOW) {
         // start captive portal
