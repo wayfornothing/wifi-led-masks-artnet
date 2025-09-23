@@ -174,7 +174,7 @@ private:
                 int i = 0;
                 for (auto& led : _leds) {
                     if (TEST_BIT(leds_bitfield, i)) {
-                        Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                        // Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                         led.enable(enabled);
                     }
                     i++;
@@ -185,7 +185,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_blink();
                         }
                         i++;
@@ -198,7 +198,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_fade_in();
                         }
                         i++;
@@ -210,7 +210,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_fade_out();
                         }
                         i++;
@@ -223,7 +223,7 @@ private:
                     int i = 0;
                     for (auto& led : _leds) {
                         if (TEST_BIT(leds_bitfield, i)) {
-                            Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
+                            // Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
                             led.start_random();
                         }
                         i++;
@@ -299,7 +299,6 @@ private:
                 case 'm':
                     for (auto& led : _leds) {
                         led.inc_fade_interval_ms(1);
-
                     }
                     break;
                 case 'l':

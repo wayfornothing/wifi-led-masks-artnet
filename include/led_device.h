@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <Ticker.h>
 
+#include "utils.h"
+
 typedef enum {
     LED_STATUS_IDLE,
     LED_STATUS_BLINK,
@@ -97,7 +99,7 @@ public:
     void enable(bool enabled) {
         _ticker.detach();
         _status = LED_STATUS_IDLE;
-        Serial.printf("LED %s (pin %d) %s", name.c_str(), _pin, enabled ? "ON" : "OFF");
+        Serial.printf("LED %s (pin %d) %s\n", name.c_str(), _pin, enabled ? "ON" : "OFF");
         digitalWrite(_pin, enabled ? HIGH : LOW);
     }
 
@@ -122,7 +124,7 @@ public:
 
     void set_random_midpoint(int percent) {
         _random_midpoint = RAND_MAX / (100.0 / _clamp(percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
-        Serial.printf("RMID: %d\n", _random_midpoint);
+        Serial.printf("RMID: %d%%\n", percent);
     }
 
     void inc_random_interval_ms(int ms) {
@@ -149,41 +151,34 @@ private:
     Ticker      _ticker;
     eLEDStatus  _status;
     uint16_t    _duty = FADE_MIN;
-
-    template <typename T>
-    T _clamp(T value, T minVal, T maxVal) {
-        if (value < minVal) return minVal;
-        if (value > maxVal) return maxVal;
-        return value;
-    }
-    
+   
     void _toggle() {
         digitalWrite(_pin, !digitalRead(_pin));
     }
 
     void _randomize() {
-        bool enabled = rand() < _random_midpoint;
+        bool enabled = rand() > _random_midpoint;
         digitalWrite(_pin, enabled ? LOW : HIGH);
     }
 
-    void _fade_out() {
+    void _fade_in() {
         // Serial.println(duty);
         analogWrite(_pin, _duty++);
         if (_duty == FADE_MAX) {
             // fade finished
-            Serial.println(F("FADE OUT ENDED"));
+            Serial.println(F("FADE IN ENDED"));
             _duty = FADE_MIN;
             _status = LED_STATUS_IDLE;
             _ticker.detach();
         }
     }
     
-    void _fade_in() {
+    void _fade_out() {
         // Serial.println(duty);
         analogWrite(_pin, _duty--);
         if (_duty == FADE_MIN) {
             // fade finished
-            Serial.println(F("FADE IN ENDED"));
+            Serial.println(F("FADE OUT ENDED"));
             _duty = FADE_MAX;
             _status = LED_STATUS_IDLE;
             _ticker.detach();
