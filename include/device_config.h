@@ -13,7 +13,7 @@ public:
 private:
 
     // Singleton
-    DeviceConfig() : universe(0), channel(1) {
+    DeviceConfig() : universe(0), cc(22), channel(1) {
         load();
     }
     DeviceConfig(const DeviceConfig&) = delete;
@@ -24,6 +24,7 @@ private:
     String ssid;
     String pass;
     uint16_t universe;
+    uint16_t cc;
     uint16_t channel;
 
     // struct LEDConfig {
@@ -115,6 +116,7 @@ public:
         }
 
         universe = leds_json["universe"]   | 0;
+        cc = leds_json["cc"]   | 22;
         channel  = leds_json["channel"]    | 1;
 
         _leds.clear();
@@ -148,6 +150,7 @@ public:
         Serial.println(ssid);
         // Serial.println(pass);
         Serial.printf("UNI: %d\n", universe);
+        Serial.printf("CC: %d\n", cc);
         Serial.printf("CHAN: %d\n", channel);
     }
 
@@ -205,7 +208,10 @@ public:
 
     uint16_t get_universe() const { return universe; }
     void set_universe(uint16_t u) { universe = u; }
-
+    
+    uint16_t get_cc() const { return cc; }
+    void set_cc(uint16_t c) { cc = c; }
+    
     uint16_t get_channel() const { return channel; }
     void set_channel(uint16_t c) { channel = c; }
 
