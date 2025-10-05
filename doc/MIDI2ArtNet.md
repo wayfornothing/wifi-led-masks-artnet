@@ -12,3 +12,16 @@ Sous Windows 11:
 
 
 Le script est multi channel sur son Universe, donc on peut créer plusieurs pistes midi sous reaper
+
+TODO: créer un installateur pour le planificateur de tâches
+
+Résumé:
+
+```powershell
+cd .\Documents\WFN\wifi-led-masks-artnet\
+python -m venv venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+venv\Scripts\Activate.ps1
+pip install mido python-rtmidi
+python .\scripts\midi2artnet.py --broadcast 192.168.1.255
+```

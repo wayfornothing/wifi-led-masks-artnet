@@ -14,20 +14,16 @@
 #define MIDI_TYPE_CC (2)
 #define MIDI_TYPE_NOTE (3)
 
-enum CCCommands
-{
+typedef enum CCCommand {
     CC_LED_OFF = 22,
     CC_LED_ON,
+    CC_LED_DIM,
     CC_LED_BLINK,
     CC_LED_FADE_IN,
     CC_LED_FADE_OUT,
     CC_LED_RANDOM,
-    CC_CFG_BLINK_INT,
-    CC_CFG_RANDOM_INT,
     CC_CFG_RANDOM_MID,
-    CC_CFG_FADE_IN_INT,
-    CC_CFG_FADE_OUT_INT,
-};
+} eCCCommand;
 
 #define TEST_BIT(v, b) (v & (1 << b))
 
@@ -48,8 +44,7 @@ private:
 
 public:
     Device() : _wifi(10'000, 2'000, 20, LED_BUILTIN),
-               _web(ConfigWebServer())
-    {
+               _web(ConfigWebServer()) {
     }
 
     void begin()
@@ -113,10 +108,7 @@ public:
 
     void tick()
     {
-        // static uint8_t prev_pc = 0;
-        // static uint8_t prev_cc = 0;
-        // static uint8_t prev_note = 0;
-        _cli();
+        // _cli();
 
         // keep service running
         MDNS.update();
@@ -142,11 +134,14 @@ public:
                 {
                 case MIDI_TYPE_PC:
                     Serial.printf("PC %d\n", command);
+                    _process_pc(command);
                     break;
 
                 case MIDI_TYPE_CC:
                     Serial.printf("CC %d val %d\n", command, value);
-                    _process(command, value);
+                    if (value > 0) {
+                        _process_cc(command, value);
+                    }
                     break;
 
                 case MIDI_TYPE_NOTE:
@@ -166,79 +161,107 @@ public:
     }
 
 private:
-    void _process(uint8_t cc, uint8_t value) {
+
+    void _process_pc(uint8_t pc) {
+        // Program Change selects LED indexes for future configuration
         int i = 0;
+        for (auto &led : _leds) {
+            Serial.printf("LED %d (%s) %sSELECTED\n", i, led.name.c_str(), TEST_BIT(pc, i) ? "" : "UN");
+            led.select(TEST_BIT(pc, i));
+            i++;
+        }
+    }
+
+
+    void _process_cc(uint8_t cc, uint8_t value) {
+        static const std::unordered_map<uint8_t, std::function<void(LEDDevice&, uint8_t)>> actions = {
+            {CC_LED_ON,         [](LEDDevice& led, uint8_t)  { led.enable(true);      }}, // Serial.printf("LED %s ON\n", led.name.c_str()); }},
+            {CC_LED_OFF,        [](LEDDevice& led, uint8_t)  { led.enable(false);     }}, // Serial.printf("LED %s OFF\n", led.name.c_str()); }},
+            {CC_LED_DIM,        [](LEDDevice& led, uint8_t v){ led.dim(v);            }}, // Serial.printf("LED %s DIM %d%%\n", led.name.c_str(), v); }},
+            {CC_LED_BLINK,      [](LEDDevice& led, uint8_t v){ led.start_blink(v);    }}, // Serial.printf("LED %s BLINK %dms\n", led.name.c_str(), v); }},
+            {CC_LED_RANDOM,     [](LEDDevice& led, uint8_t v){ led.start_random(v);   }}, // Serial.printf("LED %s RANDOM %dms\n", led.name.c_str(), v); }},
+            {CC_LED_FADE_IN,    [](LEDDevice& led, uint8_t v){ led.start_fade_in(v);  }}, // Serial.printf("LED %s FADE IN %dms\n", led.name.c_str(), v); }},
+            {CC_LED_FADE_OUT,   [](LEDDevice& led, uint8_t v){ led.start_fade_out(v); }}, // Serial.printf("LED %s FADE OUT %dms\n", led.name.c_str(), v); }},
+        };
+
+        auto it = actions.find(cc);
+        if (it == actions.end()) return;
+
+        for (auto &led : _leds) {
+            if (led.is_selected())
+                it->second(led, value);
+        }
+    }
+
+
+
+    void __process_cc(uint8_t cc, uint8_t value) {
         switch (cc) {
-            case CC_LED_ON: {
-                for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) ON\n", i, led.name.c_str());
-                        led.enable(true);
-                    }
-                    i++;
-                }
-            }
-            break;
             case CC_LED_OFF: {
                 for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) OFF\n", i, led.name.c_str());
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s OFF\n", led.name.c_str());
                         led.enable(false);
                     }
-                    i++;
                 }
-            }
-            break;
+            } break;
+
+            case CC_LED_ON: {
+                for (auto &led : _leds) {
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s ON\n", led.name.c_str());
+                        led.enable(true);
+                    }
+                }
+            } break;
+
+            case CC_LED_DIM: {
+                for (auto &led : _leds) {
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s DIM %d%%\n", led.name.c_str(), value);
+                        led.dim(value);
+                    }
+                }
+            } break;
+
             case CC_LED_BLINK: {
                 for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) BLINK\n", i, led.name.c_str());
-                        led.start_blink();
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s BLINK %dms\n", led.name.c_str(), value);
+                        // led.set_blink_interval_ms(value);                       
+                        led.start_blink(value);
                     }
-                    i++;
                 }
             }
             break;
             case CC_LED_RANDOM: {
                 for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) RAND\n", i, led.name.c_str());
-                        led.start_random();
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s RAND %dms\n", led.name.c_str(), value);
+                        // led.set_random_interval_ms(value);
+                        led.start_random(value);
                     }
-                    i++;
                 }
             }
             break;
             case CC_LED_FADE_IN: {
                 for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) FADE IN\n", i, led.name.c_str());
-                        led.start_fade_in();
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s FADE IN %dms\n", led.name.c_str(), value);
+                        // led.set_fade_interval_ms(value);
+                        led.start_fade_in(value);
                     }
-                    i++;
                 }
             }
             break;
             case CC_LED_FADE_OUT: {
                 for (auto &led : _leds) {
-                    if (TEST_BIT(value, i)) {
-                        Serial.printf("LED %d (%s) FADE OUT\n", i, led.name.c_str());
-                        led.start_fade_out();
+                    if (led.is_selected()) {
+                        Serial.printf("LED %s FADE OUT %dms\n", led.name.c_str(), value);
+                        // led.set_fade_interval_ms(value);
+                        led.start_fade_out(value);
                     }
-                    i++;
                 }
-            }
-            break;
-            case CC_CFG_BLINK_INT: {
-            }
-            break;
-            case CC_CFG_FADE_IN_INT: {
-            }
-            break;
-            case CC_CFG_FADE_OUT_INT: {
-            }
-            break;
-            case CC_CFG_RANDOM_INT: {
             }
             break;
             case CC_CFG_RANDOM_MID: {
@@ -247,6 +270,10 @@ private:
         }
     }
 
+
+
+
+/*
     void _process(uint8_t leds_bitfield, uint8_t command, bool enabled)
     {
         switch (command)
@@ -346,11 +373,11 @@ private:
             {
             case 'E':
                 // all ON
-                _process(all_leds, CC_LED_ON);
+                _process_cc(all_leds, CC_LED_ON);
                 break;
             case 'e':
                 // all OFF
-                _process(all_leds, CC_LED_OFF);
+                _process_cc(all_leds, CC_LED_OFF);
                 break;
             case 'S':
             case 'B':
@@ -360,7 +387,7 @@ private:
             case 's':
             case 'b':
                 // blink OFF
-                _process(all_leds, CC_LED_OFF);
+                _process_cc(all_leds, CC_LED_OFF);
                 break;
             case 'R':
                 // random ON
@@ -368,15 +395,15 @@ private:
                 break;
             case 'r':
                 // random OFF
-                _process(all_leds, CC_LED_OFF);
+                _process_cc(all_leds, CC_LED_OFF);
                 break;
             case 'F':
                 // fade IN
-                _process(all_leds, CC_LED_FADE_IN);
+                _process_cc(all_leds, CC_LED_FADE_IN);
                 break;
             case 'f':
                 // fade OUT
-                _process(all_leds, CC_LED_FADE_OUT);
+                _process_cc(all_leds, CC_LED_FADE_OUT);
                 break;
             case '*':
                 for (auto &led : _leds)
@@ -421,4 +448,5 @@ private:
             }
         }
     }
+        */
 };

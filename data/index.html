@@ -172,9 +172,9 @@
     <div class="card">
         <h3>ArtNet</h3>
         <div class="form-grid">
-            <label>Universe
+            <!-- <label>Universe
                 <input type="number" id="universe" min="0" value="0">
-            </label>
+            </label> -->
             <label>Channel
                 <input type="number" id="channel" min="1" value="1">
             </label>
@@ -325,7 +325,7 @@
         function saveConfig() {
             const leds = [...document.querySelectorAll(".led-block")].map(getLEDConfig);
             const config = {
-                universe: parseInt(document.getElementById("universe").value),
+                // universe: parseInt(document.getElementById("universe").value),
                 channel: parseInt(document.getElementById("channel").value),
                 leds: leds
             };
@@ -341,7 +341,7 @@
             fetch("/leds.json")
                 .then(r => r.json())
                 .then(cfg => {
-                    if (cfg.universe !== undefined) document.getElementById("universe").value = cfg.universe;
+                    // if (cfg.universe !== undefined) document.getElementById("universe").value = cfg.universe;
                     if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
 
                     document.getElementById("leds").innerHTML = "";

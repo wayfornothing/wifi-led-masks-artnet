@@ -8,7 +8,7 @@ Device _device;
 #define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(100);
 
     Serial.printf("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
