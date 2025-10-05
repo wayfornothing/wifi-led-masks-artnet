@@ -67,6 +67,7 @@ def main():
                 base_index = channel * 3   # chaque canal MIDI occupe 3 slots DMX
 
                 channel += 1
+                print(channel)
                 if args.filter_channel == 0 or args.filter_channel == channel:
                     if msg.type == "program_change":
                         dmx[base_index] = TYPE_PC

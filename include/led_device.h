@@ -8,7 +8,7 @@
 typedef enum {
     LED_STATUS_IDLE,
     LED_STATUS_BLINK,
-    LED_STATUS_FADE_IN,
+    LED_STATUS_FADING,
     LED_STATUS_FADE_OUT,
     LED_STATUS_RANDOM
 } eLEDStatus;   
@@ -42,17 +42,12 @@ public:
 
     LEDDevice(uint8_t pin, 
               String name, 
-            //   int blink_interval_ms = DEFAULT_BLINK_INTERVAL_MS, 
-            //   int random_interval_ms = DEFAULT_RANDOM_INTERVAL_MS, 
               int random_midpoint_percent = DEFAULT_RANDOM_MIDPOINT) : 
         name(name),
         _pin(pin), 
         _selected(false),
         _status(LED_STATUS_IDLE) {
-        // set_blink_interval_ms(blink_interval_ms);
-        // set_random_interval_ms(random_interval_ms);
         set_random_midpoint(random_midpoint_percent);
-        // set_fade_interval_ms(fade_interval_ms);
         pinMode(_pin, OUTPUT);
         Serial.printf("Created LED %s at pin %d\n", name.c_str(), pin);
     }
@@ -90,11 +85,24 @@ public:
         }, this);
     }
 
+
+    void start_heartbeat(uint8_t interval_ms) {
+        enable(false);
+        _status = LED_STATUS_FADING;
+        _fade_idx = FADE_MIN;
+        Serial.printf("HBEAT IN %s %dms\n", name.c_str(), interval_ms);
+        _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
+            self->_heartbeat();
+        }, this);
+    }
+
+
+
     void start_fade_in(uint8_t interval_ms) {
         enable(false);
-        _status = LED_STATUS_FADE_IN;
-        _duty = FADE_MAX;
-        interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
+        _status = LED_STATUS_FADING;
+        _fade_idx = FADE_MIN;
+        // interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
         Serial.printf("FADE IN %s %dms\n", name.c_str(), interval_ms);
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_fade_in();
@@ -103,8 +111,8 @@ public:
 
     void start_fade_out(uint8_t interval_ms) {
         enable(true);
-        _status = LED_STATUS_FADE_OUT;
-        _duty = FADE_MIN;
+        _status = LED_STATUS_FADING;
+        _fade_idx = FADE_MAX;
         interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
         Serial.printf("FADE OUT %s %dms\n", name.c_str(), interval_ms);        
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
@@ -115,64 +123,64 @@ public:
     void enable(bool enabled) {
         _ticker.detach();
         _status = LED_STATUS_IDLE;
-        Serial.printf("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
+        // Serial.printf("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
         digitalWrite(_pin, enabled ? HIGH : LOW);
     }
 
-    void dim(int percent) {
+
+    static constexpr uint8_t _dim_tab[256] = {
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
+        1,  1,  1,  1,  1,  2,  2,  2,  2,  3,
+        3,  3,  4,  4,  5,  5,  6,  6,  7,  7,
+        8,  9,  9, 10, 10, 11, 12, 13, 13, 14,
+        15, 16, 17, 18, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 29, 30, 31, 32, 34, 35,
+        36, 38, 39, 41, 42, 44, 45, 47, 49, 50,
+        52, 54, 56, 58, 60, 62, 64, 66, 68, 70,
+        72, 74, 76, 78, 81, 83, 85, 88, 90, 93,
+        95, 98,101,103,106,109,111,114,117,120,
+        123,126,129,132,135,138,141,145,148,151,
+        155,158,162,165,169,172,176,180,184,188,
+        191,195,199,203,207,211,215,219,223,227,
+        231,235,239,243,247,251,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255
+    };
+
+
+
+
+    void dim(int value) {
         _ticker.detach();
         _status = LED_STATUS_IDLE;
-        percent = _clamp(percent, 0, 100);
-        Serial.printf("LED %s (pin %d) %d%%\n", name.c_str(), _pin, percent);
-        int analog_value = map(percent, 0, 100, FADE_MIN, FADE_MAX);
+        value *= 2;
+        int analog_value = _dim_tab[value];
+        Serial.printf("DIM %s %d an %d\n", name.c_str(), value, analog_value);
         analogWrite(_pin, analog_value);
     }
-
-    // void set_blink_interval_ms(int ms) {
-    //     _blink_interval_ms = _clamp(ms, MIN_BLINK_INTERVAL_MS, MAX_BLINK_INTERVAL_MS);
-    //     Serial.printf("BITV: %dms\n", _blink_interval_ms);
-    // }
-
-    // void inc_blink_interval_ms(int ms) {
-    //     _blink_interval_ms = _clamp(_blink_interval_ms + ms, MIN_BLINK_INTERVAL_MS, MAX_BLINK_INTERVAL_MS);
-    //     Serial.printf("BITV: %dms\n", _blink_interval_ms);
-    // }
-
-    // void set_random_interval_ms(int ms) {
-    //     _random_interval_ms = _clamp(ms, MIN_RANDOM_INTERVAL_MS, MAX_RANDOM_INTERVAL_MS);
-    //     Serial.printf("RITV: %dms\n", _random_interval_ms);
-    // }
 
     void set_random_midpoint(int percent) {
         _random_midpoint = RAND_MAX / (100.0 / _clamp(percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
         Serial.printf("RMID: %d%%\n", percent);
     }
 
-    // void inc_random_interval_ms(int ms) {
-    //     _random_interval_ms = _clamp(_random_interval_ms + ms, MIN_RANDOM_INTERVAL_MS, MAX_RANDOM_INTERVAL_MS);
-    //     Serial.printf("RITV: %dms\n", _random_interval_ms);
-    // }
-
-    // void set_fade_interval_ms(int ms) {
-    //     _fade_interval_ms = _clamp(ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-    //     Serial.printf("FITV: %dms\n", _fade_interval_ms);
-    // }
-
-    // void inc_fade_interval_ms(int ms) {
-    //     _fade_interval_ms = _clamp(_fade_interval_ms + ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-    //     Serial.printf("FITV: %dms\n", _fade_interval_ms);
-    // }
-
 private:
     uint8_t     _pin;
     bool        _selected;
-    // int         _blink_interval_ms;
-    // int         _random_interval_ms;
     int         _random_midpoint;
-    // int         _fade_interval_ms;
     Ticker      _ticker;
     eLEDStatus  _status;
-    uint16_t    _duty = FADE_MIN;
+    uint16_t    _fade_idx = FADE_MIN;
    
     void _toggle() {
         digitalWrite(_pin, !digitalRead(_pin));
@@ -184,12 +192,12 @@ private:
     }
 
     void _fade_in() {
-        // Serial.println(duty);
-        analogWrite(_pin, _duty++);
-        if (_duty == FADE_MAX) {
+        // Serial.printf("idx %d val %d\n", _fade_idx, _dim_tab[_fade_idx]);
+        analogWrite(_pin, _dim_tab[_fade_idx++]);
+        if (_fade_idx == FADE_MAX) {
             // fade finished
             Serial.println(F("FADE IN ENDED"));
-            _duty = FADE_MIN;
+            _fade_idx = FADE_MIN;
             _status = LED_STATUS_IDLE;
             _ticker.detach();
         }
@@ -197,13 +205,32 @@ private:
     
     void _fade_out() {
         // Serial.println(duty);
-        analogWrite(_pin, _duty--);
-        if (_duty == FADE_MIN) {
+        analogWrite(_pin, _dim_tab[_fade_idx--]);
+        if (_fade_idx == FADE_MIN) {
             // fade finished
             Serial.println(F("FADE OUT ENDED"));
-            _duty = FADE_MAX;
+            _fade_idx = FADE_MAX;
             _status = LED_STATUS_IDLE;
             _ticker.detach();
         }
     }
+
+
+    void _heartbeat() {
+        static int delta = 1;
+        _fade_idx += delta;
+        Serial.printf("idx %d val %d\n", _fade_idx, _dim_tab[_fade_idx]);
+        analogWrite(_pin, _dim_tab[_fade_idx]);
+        if (_fade_idx == FADE_MAX && delta > 0) {
+            // fade in finished
+            Serial.println(F("HBEART REVERT"));
+            delta = -1;
+        }
+        else if (_fade_idx == FADE_MIN && delta < 0) {
+            // fade out finished
+            Serial.println(F("HBEART REVERT"));
+            delta = 1;
+        }
+    }
+
 };

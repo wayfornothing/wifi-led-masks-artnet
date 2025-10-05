@@ -86,10 +86,10 @@ public:
             String pin_name = doc["pin"].as<String>();
             int pin = DeviceConfig::pin_from_string(pin_name);
 
-            Serial.println("--TEST--");
-            Serial.println(mode);
-            Serial.println(pin_name);
-            Serial.println(pin);
+            // Serial.println("--TEST--");
+            // Serial.println(mode);
+            // Serial.println(pin_name);
+            // Serial.println(pin);
 
             if (mode == "enable") {
                 static int en = 1;
