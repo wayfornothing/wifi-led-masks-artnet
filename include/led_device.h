@@ -53,6 +53,7 @@ public:
     }
 
     void select(bool select) {
+        Serial.printf("LED %s %sSELECTED\n", name.c_str(), select ? "" : "UN");
         _selected = select;
     }
 

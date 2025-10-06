@@ -15,7 +15,7 @@
 #define MIDI_TYPE_NOTE (3)
 
 typedef enum CCCommand {
-    CC_LED_OFF = 22,
+    CC_LED_OFF = 0,
     // CC_LED_ON,
     CC_LED_DIM,
     CC_LED_BLINK,
@@ -139,16 +139,19 @@ public:
                     }
                     break;
 
-                case MIDI_TYPE_NOTE:
-                    Serial.printf("Note%s %d vel %d\n", value == 0 ? "Off" : "On", number, value);
-                    if (value > 0) {
-                        _process_cc(number, value);
+                case MIDI_TYPE_NOTE: {
+                    uint8_t led_idx = number / CC_LAST;
+                    uint8_t cc = number % CC_LAST;
+                    // Serial.printf("Note%s %d vel %d idx %d cc %d\n", value == 0 ? "Off" : "On", number, value, led_idx, cc);
+                    if (led_idx < _leds.size()) {
+                        if (value > 0) {
+                            LEDDevice& led = _leds.at(led_idx);
+                            led.select(true);
+                            _process_cc(cc, value);
+                            led.select(false);
+                        }
                     }
-                    // else {
-                    //     // disable all
-                    //     _process_cc(CC_LED_OFF, 0);
-                    // }
-                    break;
+                } break;
                 default:
                     break;
                 }
@@ -165,7 +168,6 @@ private:
         // Program Change selects LED indexes for future configuration
         int i = 0;
         for (auto &led : _leds) {
-            Serial.printf("LED %d (%s) %sSELECTED\n", i, led.name.c_str(), TEST_BIT(pc, i) ? "" : "UN");
             led.select(TEST_BIT(pc, i));
             i++;
         }
@@ -193,144 +195,40 @@ private:
         }
 
         for (auto &led : _leds) {
-            if (led.is_selected())
+            if (led.is_selected()) {
                 it->second(led, value);
+            }
         }
     }
 
-
-
-
-/*
-    void _process(uint8_t leds_bitfield, uint8_t command, bool enabled)
-    {
-        switch (command)
-        {
-        case CC_LED_ON:
-        {
-            int i = 0;
-            for (auto &led : _leds)
-            {
-                if (TEST_BIT(leds_bitfield, i))
-                {
-                    // Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                    led.enable(enabled);
-                }
-                i++;
-            }
-        }
-        break;
-        case CC_LED_BLINK:
-        {
-            if (enabled)
-            {
-                int i = 0;
-                for (auto &led : _leds)
-                {
-                    if (TEST_BIT(leds_bitfield, i))
-                    {
-                        // Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                        led.start_blink();
-                    }
-                    i++;
-                }
-            }
-        }
-        break;
-        case CC_LED_FADE_IN:
-        {
-            if (enabled)
-            {
-                // fade in
-                int i = 0;
-                for (auto &led : _leds)
-                {
-                    if (TEST_BIT(leds_bitfield, i))
-                    {
-                        // Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                        led.start_fade_in();
-                    }
-                    i++;
-                }
-            }
-            else
-            {
-                // fade out
-                // Serial.println(F("FADE OUT"));
-                int i = 0;
-                for (auto &led : _leds)
-                {
-                    if (TEST_BIT(leds_bitfield, i))
-                    {
-                        // Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                        led.start_fade_out();
-                    }
-                    i++;
-                }
-            }
-        }
-        break;
-        case CC_LED_RANDOM:
-        {
-            if (enabled)
-            {
-                // random start
-                int i = 0;
-                for (auto &led : _leds)
-                {
-                    if (TEST_BIT(leds_bitfield, i))
-                    {
-                        // Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                        led.start_random();
-                    }
-                    i++;
-                }
-            }
-        }
-        break;
-        }
-    }
-
-    */
     void _cli() {
         uint8_t all_leds = 0x7f;
         int c = Serial.read();
         if (c >= 0) {
             _process_pc(all_leds);
             switch (c) {
-            // case 'E':
-            //     // all ON
-            //     _process_cc(CC_LED_ON, 1);
-            //     break;
             case 'e':
-                // all OFF
                 _process_cc(CC_LED_OFF, 1);
                 break;
-            case 'S':
             case 'B':
-                // blink ON
                 _process_cc(CC_LED_BLINK, DEFAULT_BLINK_INTERVAL_MS);
                 break;
-            case 's':
-            case 'b':
-                // blink OFF
-                _process_cc(CC_LED_OFF, 1);
-                break;
             case 'R':
-                // random ON
                 _process_cc(CC_LED_RANDOM, DEFAULT_RANDOM_INTERVAL_MS);
                 break;
-            case 'r':
-                // random OFF
-                _process_cc(CC_LED_OFF, 1);
-                break;
             case 'F':
-                // fade IN
                 _process_cc(CC_LED_FADE_IN, DEFAULT_FADE_INTERVAL_MS);
                 break;
             case 'f':
-                // fade OUT
                 _process_cc(CC_LED_FADE_OUT, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case 'P':
+            case 'p':
+                _process_cc(CC_LED_PULSE, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case 'H':
+            case 'h':
+                _process_cc(CC_LED_HEARTBEAT, DEFAULT_FADE_INTERVAL_MS);
                 break;
             case '*':
                 // for (auto &led : _leds) {
