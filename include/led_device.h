@@ -53,7 +53,7 @@ public:
     }
 
     void select(bool select) {
-        Serial.printf("LED %s %sSELECTED\n", name.c_str(), select ? "" : "UN");
+        // Serial.printf("LED %s %sSELECTED\n", name.c_str(), select ? "" : "UN");
         _selected = select;
     }
 
@@ -115,7 +115,7 @@ public:
         _status = LED_STATUS_FADING;
         _fade_idx = FADE_MIN;
         // interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-        Serial.printf("FADE IN %s %dms\n", name.c_str(), interval_ms);
+        // Serial.printf("FADE IN %s %dms\n", name.c_str(), interval_ms);
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_fade_in();
         }, this);
@@ -126,7 +126,7 @@ public:
         _status = LED_STATUS_FADING;
         _fade_idx = FADE_MAX;
         interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-        Serial.printf("FADE OUT %s %dms\n", name.c_str(), interval_ms);        
+        // Serial.printf("FADE OUT %s %dms\n", name.c_str(), interval_ms);        
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_fade_out();
         }, this);
@@ -139,7 +139,7 @@ public:
         digitalWrite(_pin, enabled ? HIGH : LOW);
     }
 
-    void dim(int value) {
+    void dim(uint8_t value) {
         _ticker.detach();
         _status = LED_STATUS_IDLE;
         value *= 2;
@@ -148,8 +148,8 @@ public:
         analogWrite(_pin, analog_value);
     }
 
-    void set_random_midpoint(int percent) {
-        _random_midpoint = RAND_MAX / (100.0 / _clamp(percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
+    void set_random_midpoint(uint8_t percent) {
+        _random_midpoint = RAND_MAX / (100.0 / _clamp((int)percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
         Serial.printf("RMID: %d%%\n", percent);
     }
 

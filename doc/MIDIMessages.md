@@ -28,12 +28,29 @@ Si la valeur d'un Control Change est 0, la fonction correspondante est ignorée.
 
 CC# | Code | Fonction | Valeur CC
 --- | ---  | --- | ---
-22 | CC_LED_OFF | Eteint les LEDs, annule aussi les random / fade / blink etc | Ignoré
-23 | CC_LED_ON | Allume les LEDs | Ignoré
-24 | CC_LED_DIM | Envoie un signal PWM aux LEDs sélectionnées | Duty Cycle en % (plafonné à 100%)
-25 | CC_LED_BLINK | Fait clignoter les LEDs jusqu'à annulation | Intervalle en ms entre 2 frames
-26 | CC_LED_FADE_IN | Fondu entrant | intervalle entre 2 frames (255 max) en millisecondes
-27 | CC_LED_FADE_OUT | Fondu sortant | intervalle entre 2 frames (255 max) en millisecondes
-28 | CC_LED_RANDOM | Clignotement aléatoire jusqu'à annulation | Intervalle en millisecondes entre 2 frames
-29 | CC_CFG_RANDOM_MID | Règle la balance du random | Balance en % (plafonné à 100%). 0 == éteint, 100 == allumé
+0 | CC_LED_OFF | Eteint la LEDs, annule les random / fade / blink, etc | Ignoré
+1 | CC_LED_DIM | Envoie un signal PWM aux LEDs sélectionnées | Duty Cycle en % (plafonné à 100%)
+2 | CC_LED_BLINK | Fait clignoter les LEDs | Intervalle entre 2 frames en millisecondes
+3 | CC_LED_FADE_IN | Fondu entrant | Intervalle entre 2 frames en millisecondes
+4 | CC_LED_FADE_OUT | Fondu sortant | Intervalle entre 2 frames en millisecondes
+5 | CC_LED_HEARTBEAT | Pulsation continue | Intervalle entre 2 frames en millisecondes
+6 | CC_LED_PULSE | Pulsation unique | Intervalle entre 2 frames en millisecondes
+7 | CC_LED_RANDOM | Clignotement aléatoire jusqu'à annulation | Intervalle entre 2 frames en millisecondes
+8 | CC_CFG_RANDOM_MID | Règle la balance du random | Balance en % (plafonné à 100%)
+9 | CC_CFG_HEARTBEAT_MAX | Règle la luminosité max de HEARTBEAT et PULSE | 0 == éteint, 127 == luminosité max
 
+
+## MIDI Notes
+
+On peut programmer les LEDs avec les MIDI notes.
+
+Chaque LED possède 10 fonctions (voir table Codes Control Change), donc pour choisir la LED à assigner, on ajoute (index de la LED * 10) au Code Control Change.
+
+**Attention, l'index de la LED commence à 0 !**
+
+Par exemple pour lancer un RANDOM sur la LED n°2:
+
+```
+Note: (led_index * 10) + code_cc_random = (2 * 10) + 7 ! 27
+Velocity: 40 = chaque frame dure 40 millisecondes
+```
