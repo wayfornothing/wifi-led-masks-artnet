@@ -1,4 +1,5 @@
 #pragma once
+
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <map>
@@ -13,7 +14,7 @@ public:
 private:
 
     // Singleton
-    DeviceConfig() : universe(0), channel(1) {
+    DeviceConfig() : /* universe(0), cc(22),*/ channel(1) {
         load();
     }
     DeviceConfig(const DeviceConfig&) = delete;
@@ -23,7 +24,8 @@ private:
     String hostname;
     String ssid;
     String pass;
-    uint16_t universe;
+    // uint16_t universe;
+    // uint16_t cc;
     uint16_t channel;
 
     // struct LEDConfig {
@@ -114,8 +116,9 @@ public:
             return false;
         }
 
-        universe = leds_json["universe"]   | 0;
-        channel  = leds_json["channel"]    | 1;
+        // universe = leds_json["universe"]   | 0;
+        // cc = leds_json["cc"]   | 22;
+        channel  = leds_json["channel"] | 1;
 
         _leds.clear();
         if (leds_json.containsKey("leds")) {
@@ -126,10 +129,9 @@ public:
                 if (pin != PIN_INVALID) {
                     LEDDevice led = LEDDevice(pin, 
                                               name, 
-                                              led_json["blink_interval"]  | DEFAULT_BLINK_INTERVAL_MS,
-                                              led_json["random_interval"] | DEFAULT_RANDOM_INTERVAL_MS,
-                                              led_json["random_midpoint"] | DEFAULT_RANDOM_MIDPOINT,
-                                              led_json["fade_interval"]   | DEFAULT_FADE_INTERVAL_MS);
+                                              //led_json["blink_interval"]  | DEFAULT_BLINK_INTERVAL_MS,
+                                              //led_json["random_interval"] | DEFAULT_RANDOM_INTERVAL_MS,
+                                              led_json["random_midpoint"] | DEFAULT_RANDOM_MIDPOINT);
                     _leds.push_back(led);
                 }
                 else {
@@ -147,7 +149,8 @@ public:
         Serial.println(hostname);
         Serial.println(ssid);
         // Serial.println(pass);
-        Serial.printf("UNI: %d\n", universe);
+        // Serial.printf("UNI: %d\n", universe);
+        // Serial.printf("CC: %d\n", cc);
         Serial.printf("CHAN: %d\n", channel);
     }
 
@@ -203,9 +206,12 @@ public:
     const String& get_password() const { return pass; }
     void set_password(const String& p) { pass = p; }
 
-    uint16_t get_universe() const { return universe; }
-    void set_universe(uint16_t u) { universe = u; }
-
+    // uint16_t get_universe() const { return universe; }
+    // void set_universe(uint16_t u) { universe = u; }
+    
+    // uint16_t get_cc() const { return cc; }
+    // void set_cc(uint16_t c) { cc = c; }
+    
     uint16_t get_channel() const { return channel; }
     void set_channel(uint16_t c) { channel = c; }
 

@@ -1,45 +1,61 @@
 #pragma once
 
 #include <Arduino.h>
-#include <WiFiUdp.h>
+// #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
+#include <ArtnetWifi.h>
 
 #include "device_config.h"
 #include "web_server.h"
 #include "wifi_manager.h"
 #include "led_device.h"
 
+#define MIDI_TYPE_PC (1)
+#define MIDI_TYPE_CC (2)
+#define MIDI_TYPE_NOTE (3)
+
+typedef enum CCCommand {
+    CC_LED_OFF = 0,
+    // CC_LED_ON,
+    CC_LED_DIM,
+    CC_LED_BLINK,
+    CC_LED_FADE_IN,
+    CC_LED_FADE_OUT,
+    CC_LED_HEARTBEAT,
+    CC_LED_PULSE,
+    CC_LED_RANDOM,
+    CC_CFG_RANDOM_MID,
+    CC_CFG_HEARTBEAT_MAX,
+    CC_LAST
+} eCCCommand;
+
 #define TEST_BIT(v, b) (v & (1 << b))
 
-class Device {
+class Device
+{
 
 private:
-    uint8_t                 _packet[600]; // enough for Art-Net header + DMX
-    // const int               PACKET_SIZE = 32;
-    WiFiManager            _wifi;
+    const uint16_t          _dmx_base = (DeviceConfig::instance().get_channel() - 1) * 3;
+    WiFiManager             _wifi;
     ConfigWebServer         _web;
-    WiFiUDP                 _udp;
+    ArtnetWifi              _artnet;
     std::vector<LEDDevice>  _leds;
-    const int               ARTNET_PORT = 6454;
-    #define                 LED_CMD_SET     (0)
-    #define                 LED_CMD_BLINK   (1)
-    #define                 LED_CMD_FADE    (2)
-    #define                 LED_CMD_RANDOM  (3)
-    
-    public:
-    Device() :
-        _wifi(10'000, 2'000, 20, LED_BUILTIN),
-        _web(ConfigWebServer()) {
+
+public:
+    Device() : _wifi(10'000, 2'000, 20, LED_BUILTIN),
+               _web(ConfigWebServer()) {
     }
-    
-    void begin() {
-        
-        DeviceConfig& _config = DeviceConfig::instance();
-        
+
+    void begin()
+    {
+
+        DeviceConfig &_config = DeviceConfig::instance();
+
         // at startup, turn all leds OFF
-        for (auto& led : _config.get_leds()) {
+        for (auto &led : _config.get_leds())
+        {
             Serial.printf("Will create LED %s\n", led.name.c_str());
-            
+
             // LEDDevice led = LEDDevice(led_cfg.pin, led_cfg.name);
             // led.blink_interval_ms = led_cfg.blink_ms;
             // led.random_interval_ms = led_cfg.random_ms;
@@ -48,15 +64,16 @@ private:
             _leds.push_back(led);
         }
 
-        _wifi.on_disconnect([=]() {
+        _wifi.on_disconnect([=]()
+                            {
             Serial.println("WiFi disconnected! Will retry...");
             // network issue happened, turn all the pins ON
             for (auto& led : _leds) {
                 led.enable(true);
-            }
-        });
+            } });
 
-        _wifi.on_connect([&]() {
+        _wifi.on_connect([&]()
+                         {
             Serial.println("WiFi connected!");
             // network restored, turn all the pins OFF
             for (auto& led : _leds) {
@@ -77,19 +94,18 @@ private:
                 Serial.println(F(".local"));
             }
 
-            _udp.begin(ARTNET_PORT);
-        });
+            _artnet.begin(); });
 
-        _wifi.on_connect_failed([=]() {
+        _wifi.on_connect_failed([=]()
+                                {
             // max connection attempts reached, turn all the pins ON
             for (auto& led : _leds) {
                 led.enable(true);
-            }
-        });
+            } });
     }
 
-    void tick() {
-
+    void tick()
+    {
         _cli();
 
         // keep service running
@@ -103,209 +119,156 @@ private:
 
         // process artnet packets
         if (_wifi.is_connected()) {
+            uint16_t opcode = _artnet.read();
+            if (opcode == ART_DMX) {
+                const uint8_t *dmx = _artnet.getDmxFrame();
+                uint8_t type = dmx[_dmx_base];          // PC / CC / NOTE
+                uint8_t number = dmx[_dmx_base + 1];    // #
+                uint8_t value = dmx[_dmx_base + 2];     // value (except for PC)
 
-            int packet_size = _udp.parsePacket();
-            if (packet_size > 0) {
-                int len = _udp.read(_packet, sizeof(_packet)); // TODO: reduce size ?
+                switch (type) {
+                case MIDI_TYPE_PC:
+                    Serial.printf("PC %d\n", number);
+                    _process_pc(number);
+                    break;
 
-                // Verify Art-Net header
-                // 0   : "Art-Net\0"
-                // 8-9 : OpCode (0x5000 for ArtDMX)
-                // 10-11 : ProtVer
-                // 12   : Sequence
-                // 13   : Physical
-                // 14-15: Universe (little endian)
-                // 16-17: Length (big endian)
-                // 18.. : DMX data (up to 512 bytes)
+                case MIDI_TYPE_CC:
+                    // Serial.printf("CC %d val %d\n", number, value);
+                    if (value > 0) {
+                        _process_cc(number, value);
+                    }
+                    break;
 
-                if (len > 18 && memcmp(_packet, "Art-Net", 7) == 0) {
-                    uint16_t opCode = _packet[8] | (_packet[9] << 8);
-                    if (opCode == 0x5000)  { 
-                        // OpOutput / ArtDmx
-                        uint16_t universe = _packet[14] | (_packet[15] << 8);
-                        uint16_t length = (_packet[16] << 8) | _packet[17];
-
-                        DeviceConfig& cfg = DeviceConfig::instance();
-                        if (universe == cfg.get_universe() && 
-                            cfg.get_channel() <= length) {
-                            // clamp buffer len
-                            // if (length > 512) {
-                            //     length = 512;
-                            // }
-                            uint8_t* dmx_data = _packet + 18;   // pointer to start of DMX data
-                            uint8_t pc = dmx_data[cfg.get_channel()];
-                            
-                            // bit 6: enabled
-                            bool enabled = TEST_BIT(pc, 6);
-
-                            // bits 5 and 4: command
-                            const uint8_t command = (pc >> 4) & 0x3;
-
-                            Serial.printf("UNI %d CH %d PC %d CMD %d EN %d LEDs %d%d%d%d\n", universe, cfg.get_channel(), pc, command, enabled, 
-                                            !!TEST_BIT(pc, 3), !!TEST_BIT(pc, 2), !!TEST_BIT(pc, 1), !!TEST_BIT(pc, 0));
-                            _process(pc & 0xF, command, enabled);
-                        }
-                        else {
-                            // universe or channel not matching requisites
-                            Serial.printf("Got universe %d\n", universe);
+                case MIDI_TYPE_NOTE: {
+                    uint8_t led_idx = number / CC_LAST;
+                    uint8_t cc = number % CC_LAST;
+                    // Serial.printf("Note%s %d vel %d idx %d cc %d\n", value == 0 ? "Off" : "On", number, value, led_idx, cc);
+                    if (led_idx < _leds.size()) {
+                        if (value > 0) {
+                            LEDDevice& led = _leds.at(led_idx);
+                            led.select(true);
+                            _process_cc(cc, value);
+                            led.select(false);
                         }
                     }
-                    else {
-                        // not 0x5000 opcode
-                    }
+                } break;
+                default:
+                    break;
                 }
-                else {
-                    // not artnet header
-                }
-            }
-            else {
-                // empty packet
             }
         }
         else {
-            // wifi disconnected
+            // wifi disconnected, should attempt to reconnect
         }
     }
 
 private:
-    void _process(uint8_t leds_bitfield, uint8_t command, bool enabled) {
-        switch (command) {
-            case LED_CMD_SET: {
-                int i = 0;
-                for (auto& led : _leds) {
-                    if (TEST_BIT(leds_bitfield, i)) {
-                        // Serial.printf("SET LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                        led.enable(enabled);
-                    }
-                    i++;
-                }
-            } break;
-            case LED_CMD_BLINK: {
-                if (enabled) {
-                    int i = 0;
-                    for (auto& led : _leds) {
-                        if (TEST_BIT(leds_bitfield, i)) {
-                            // Serial.printf("BLINK LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                            led.start_blink();
-                        }
-                        i++;
-                    }
-                }
-            } break;
-            case LED_CMD_FADE: {
-                if (enabled) {
-                    // fade in
-                    int i = 0;
-                    for (auto& led : _leds) {
-                        if (TEST_BIT(leds_bitfield, i)) {
-                            // Serial.printf("FADE IN LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                            led.start_fade_in();
-                        }
-                        i++;
-                    }
-                }
-                else {
-                    // fade out
-                    // Serial.println(F("FADE OUT"));
-                    int i = 0;
-                    for (auto& led : _leds) {
-                        if (TEST_BIT(leds_bitfield, i)) {
-                            // Serial.printf("FADE OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                            led.start_fade_out();
-                        }
-                        i++;
-                    }
-                }
-            } break;
-            case LED_CMD_RANDOM: {
-                if (enabled) {
-                    // random start
-                    int i = 0;
-                    for (auto& led : _leds) {
-                        if (TEST_BIT(leds_bitfield, i)) {
-                            // Serial.printf("RANDOM OUT LED %d (%s) %s\n", i, led.name.c_str(), enabled ? "ON" : "OFF");
-                            led.start_random();
-                        }
-                        i++;
-                    }
-                }
-            } break;
+
+    void _process_pc(uint8_t pc) {
+        // Program Change selects LED indexes for future configuration
+        int i = 0;
+        for (auto &led : _leds) {
+            led.select(TEST_BIT(pc, i));
+            i++;
+        }
+    }
+
+
+    void _process_cc(uint8_t cc, uint8_t value) {
+        static const std::unordered_map<uint8_t, std::function<void(LEDDevice&, uint8_t)>> cc_actions = {
+            // {CC_LED_ON,             [](LEDDevice& led, uint8_t)  { led.enable(true);            }},
+            {CC_LED_OFF,            [](LEDDevice& led, uint8_t)  { led.enable(false);           }},
+            {CC_LED_DIM,            [](LEDDevice& led, uint8_t v){ led.dim(v);                  }},
+            {CC_LED_BLINK,          [](LEDDevice& led, uint8_t v){ led.blink(v);                }},
+            {CC_LED_HEARTBEAT,      [](LEDDevice& led, uint8_t v){ led.heartbeat(v);            }},
+            {CC_LED_PULSE,          [](LEDDevice& led, uint8_t v){ led.pulse(v);                }},
+            {CC_LED_RANDOM,         [](LEDDevice& led, uint8_t v){ led.random(v);               }},
+            {CC_LED_FADE_IN,        [](LEDDevice& led, uint8_t v){ led.fade_in(v);              }},
+            {CC_LED_FADE_OUT,       [](LEDDevice& led, uint8_t v){ led.fade_out(v);             }},
+            {CC_CFG_RANDOM_MID,     [](LEDDevice& led, uint8_t v){ led.set_random_midpoint(v);  }},
+            {CC_CFG_HEARTBEAT_MAX,  [](LEDDevice& led, uint8_t v){ led.set_heartbeat_max(v);    }},
+        };
+
+        auto it = cc_actions.find(cc);
+        if (it == cc_actions.end()) {
+            return;
+        }
+
+        for (auto &led : _leds) {
+            if (led.is_selected()) {
+                it->second(led, value);
+            }
         }
     }
 
     void _cli() {
-        uint8_t all_leds = 0xF;
+        uint8_t all_leds = 0x7f;
         int c = Serial.read();
         if (c >= 0) {
+            _process_pc(all_leds);
             switch (c) {
-                case 'E':
-                    // all ON
-                    _process(all_leds, LED_CMD_SET, true);
-                    break;
-                case 'e':
-                    // all OFF
-                    _process(all_leds, LED_CMD_SET, false);
-                    break;
-                case 'S':
-                case 'B':
-                    // blink ON
-                    _process(all_leds, LED_CMD_BLINK, true);
-                    break;
-                case 's':
-                case 'b':
-                    // blink OFF
-                    _process(all_leds, LED_CMD_SET, true);
+            case 'e':
+                _process_cc(CC_LED_OFF, 1);
                 break;
-                case 'R':
-                    // random ON
-                    _process(all_leds, LED_CMD_RANDOM, true);
-                    break;
-                case 'r':
-                    // random OFF
-                    _process(all_leds, LED_CMD_SET, true);
-                    break;
-                case 'F':
-                    // fade IN
-                    _process(all_leds, LED_CMD_FADE, true);
-                    break;
-                case 'f':
-                    // fade OUT
-                    _process(all_leds, LED_CMD_FADE, false);
-                    break;
-                case '*':
-                    for (auto& led : _leds) {
-                        led.inc_random_interval_ms(5);
-                        led.start_random();
-                    }
-                    break;
-                case '/':
-                    for (auto& led : _leds) {
-                        led.inc_random_interval_ms(-5);
-                        led.start_random();
-                    }
-                    break;
-                case '+':
-                    for (auto& led : _leds) {
-                        led.inc_blink_interval_ms(5);
-                        led.start_blink();
-                    }
-                    break;
-                case '-':
-                    for (auto& led : _leds) {
-                        led.inc_blink_interval_ms(-5);
-                        led.start_blink();
-                    }
-                    break;
-                case 'm':
-                    for (auto& led : _leds) {
-                        led.inc_fade_interval_ms(1);
-                    }
-                    break;
-                case 'l':
-                    for (auto& led : _leds) {
-                        led.inc_fade_interval_ms(-1);
-                    }
-                    break;
+            case 'B':
+                _process_cc(CC_LED_BLINK, DEFAULT_BLINK_INTERVAL_MS);
+                break;
+            case 'R':
+                _process_cc(CC_LED_RANDOM, DEFAULT_RANDOM_INTERVAL_MS);
+                break;
+            case 'F':
+                _process_cc(CC_LED_FADE_IN, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case 'f':
+                _process_cc(CC_LED_FADE_OUT, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case 'P':
+            case 'p':
+                _process_cc(CC_LED_PULSE, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case 'H':
+            case 'h':
+                _process_cc(CC_LED_HEARTBEAT, DEFAULT_FADE_INTERVAL_MS);
+                break;
+            case '*':
+                // for (auto &led : _leds) {
+                //     led.inc_random_interval_ms(5);
+                //     led.start_random();
+                // }
+                break;
+            case '/':
+                // for (auto &led : _leds)
+                // {
+                //     led.inc_random_interval_ms(-5);
+                //     led.start_random();
+                // }
+                break;
+            case '+':
+                // for (auto &led : _leds)
+                // {
+                //     led.inc_blink_interval_ms(5);
+                //     led.start_blink();
+                // }
+                break;
+            case '-':
+                // for (auto &led : _leds)
+                // {
+                //     led.inc_blink_interval_ms(-5);
+                //     led.start_blink();
+                // }
+                break;
+            case 'm':
+                // for (auto &led : _leds)
+                // {
+                //     led.inc_fade_interval_ms(1);
+                // }
+                break;
+            case 'l':
+                // for (auto &led : _leds)
+                // {
+                //     led.inc_fade_interval_ms(-1);
+                // }
+                break;
             }
         }
     }

@@ -2,359 +2,302 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Device Configuration</title>
-    <style>
-        :root {
-            --bg: #f5f7fa;
-            --card-bg: #ffffff;
-            --accent: #0077cc;
-            --danger: #cc0000;
-            --border: #ddd;
-            --radius: 10px;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Configuration</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card-bg: #ffffff;
+      --accent: #0077cc;
+      --danger: #cc0000;
+      --border: #ddd;
+      --radius: 10px;
+    }
 
-        body {
-            font-family: system-ui, sans-serif;
-            margin: 0;
-            background: var(--bg);
-            color: #333;
-            padding: 1rem;
-        }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+      padding: 1rem;
+    }
 
-        h2,
-        h3 {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
+    h2,
+    h3 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
 
-        .card {
-            background: var(--card-bg);
-            padding: 1rem;
-            border-radius: var(--radius);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1rem;
-        }
+    .card {
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
 
-        input,
-        select,
-        button {
-            width: 100%;
-            padding: 0.5rem;
-            margin-top: 0.25rem;
-            margin-bottom: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
 
-        button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-        button:hover {
-            background: #005fa3;
-        }
+    button:hover {
+      background: #005fa3;
+    }
 
-        .btn-danger {
-            background: var(--danger);
-        }
+    .btn-danger {
+      background: var(--danger);
+    }
 
-        .btn-danger:hover {
-            background: #990000;
-        }
+    .btn-danger:hover {
+      background: #990000;
+    }
 
-        .led-block {
-            border: 1px solid var(--border);
-            padding: 0.5rem;
-            border-radius: var(--radius);
-            margin-bottom: 1rem;
-            background: #fafafa;
-        }
+    .led-block {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
 
-        .toggle-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 1rem;
-            line-height: 1;
-            cursor: pointer;
-            flex-shrink: 0;
-            margin-left: 0.5rem;
-        }
+    .toggle-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
 
-        .toggle-btn:hover {
-            background: #005fa3;
-        }
+    .toggle-btn:hover {
+      background: #005fa3;
+    }
 
-        .led-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 0.25rem 0;
-        }
+    .led-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0.25rem 0;
+    }
 
-        .led-title {
-            flex-grow: 1;
-        }
+    .led-title {
+      flex-grow: 1;
+    }
 
-        .led-content {
-            display: none;
-        }
+    .led-content {
+      display: none;
+    }
 
-        .led-block.expanded .led-content {
-            display: block;
-        }
+    .led-block.expanded .led-content {
+      display: block;
+    }
 
-        .warning {
-            color: var(--danger);
-            font-size: 0.9rem;
-            display: none;
-            margin-top: -0.5rem;
-            margin-bottom: 0.5rem;
-        }
+    .warning {
+      color: var(--danger);
+      font-size: 0.9rem;
+      display: none;
+      margin-top: -0.5rem;
+      margin-bottom: 0.5rem;
+    }
 
-        .led-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
+    .led-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
 
-        .slider-container {
-            position: relative;
-            margin-bottom: 0.75rem;
-        }
+    .name-pin-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+    }
 
-        .slider-bubble {
-            position: absolute;
-            top: -30px;
-            left: 0;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            display: none;
-            pointer-events: none;
-        }
-
-        @media (min-width: 600px) {
-            .form-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-            }
-        }
-    </style>
+    @media (min-width: 600px) {
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <h2>Device Configuration</h2>
+  <h2>Device Configuration</h2>
 
-    <div class="card">
-        <h3>ArtNet</h3>
-        <div class="form-grid">
-            <label>Universe
-                <input type="number" id="universe" min="0" value="0">
-            </label>
-            <label>Channel
-                <input type="number" id="channel" min="1" value="1">
-            </label>
-        </div>
+  <div class="card">
+    <h3>ArtNet</h3>
+    <div class="form-grid">
+      <label>Channel
+        <select id="channel">
+          ${[...Array(16)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+        </select>
+      </label>
     </div>
+  </div>
 
-    <div class="card">
-        <h3>LEDs</h3>
-        <div id="leds"></div>
-        <button onclick="addLED()">➕ Add LED</button>
-    </div>
+  <div class="card">
+    <h3>LEDs</h3>
+    <div id="leds"></div>
+    <button onclick="addLED()">➕ Add LED</button>
+  </div>
 
-    <div style="text-align:center">
-        <button id="saveBtn" onclick="saveConfig()">💾 Save</button>
-    </div>
+  <div style="text-align:center">
+    <button id="saveBtn" onclick="saveConfig()">💾 Save</button>
+  </div>
 
-    <script>
-        let ledCounter = 0;
-        const pins = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"];
+  <script>
+    let ledCounter = 0;
+    const pins = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"];
 
-        function addLED(initial = {}) {
-            ledCounter++;
-            const div = document.createElement("div");
-            div.className = "led-block expanded";
+    function addLED(initial = {}) {
+      ledCounter++;
+      const div = document.createElement("div");
+      div.className = "led-block expanded";
 
-            const name = initial.name || ("LED" + ledCounter);
+      const name = initial.name || ("LED" + ledCounter);
 
-            div.innerHTML = `
+      div.innerHTML = `
         <div class="led-header">
           <span class="led-title">${name}</span>
           <button type="button" class="toggle-btn">-</button>
         </div>
         <div class="led-content">
-          <label>Name
-            <input type="text" class="led-name" value="${name}">
-          </label>
-          <label>Pin
-            <select class="led-pin">
-              ${pins.map(p => `<option ${initial.pin === p ? "selected" : (p === "D1" ? "selected" : "")}>${p}</option>`).join("")}
-            </select>
-          </label>
+          <div class="name-pin-row">
+            <label>Name
+              <input type="text" class="led-name" value="${name}">
+            </label>
+            <label>Pin
+              <select class="led-pin">
+                ${pins.map(p => `<option ${initial.pin === p ? "selected" : (p === "D1" ? "selected" : "")}>${p}</option>`).join("")}
+              </select>
+            </label>
+          </div>
           <div class="warning">⚠ D0 is not FADE compatible</div>
-          <label>Blink Interval (ms)
-            <input type="number" class="blink-int" value="${initial.blink_interval || 50}">
-          </label>
-          <label>Random Interval (ms)
-            <input type="number" class="rand-int" value="${initial.random_interval || 100}">
-          </label>
-          
-          <label>Random Midpoint %
-            <div class="slider-container">
-                <input type="range" class="rand-mid" min="0" max="100" value="${initial.random_midpoint || 50}">
-                <span class="slider-bubble">${initial.random_midpoint || 50}</span>
-            </div>
-          </label>
-          
-          <label>Fade Interval (ms)
-            <input type="number" class="fade-int" value="${initial.fade_interval || 2}">
-          </label>
           <div class="led-actions">
             <button onclick="testLED(this,'blink')">Blink</button>
             <button onclick="testLED(this,'enable')">Enable</button>
             <button onclick="testLED(this,'random')">Random</button>
             <button onclick="testLED(this,'fade')">Fade</button>
+            <button onclick="testLED(this,'heartbeat')">Heartbeat</button>
+            <button onclick="testLED(this,'pulse')">Pulse</button>
             <button class="btn-danger" onclick="removeLED(this)">❌ Remove</button>
           </div>
         </div>
       `;
 
-            const sliderContainer = div.querySelector(".slider-container");
-            const sliderInput = sliderContainer.querySelector(".rand-mid");
-            const bubble = sliderContainer.querySelector(".slider-bubble");
-            function updateBubble() {
-                const val = sliderInput.value;
-                bubble.textContent = val;
+      // Expand/collapse toggle
+      const toggleBtn = div.querySelector(".toggle-btn");
+      toggleBtn.addEventListener("click", () => {
+        div.classList.toggle("expanded");
+        toggleBtn.textContent = div.classList.contains("expanded") ? "-" : "+";
+      });
 
-                // Position bubble above thumb
-                const percent = (val - sliderInput.min) / (sliderInput.max - sliderInput.min);
-                const sliderWidth = sliderInput.offsetWidth;
-                bubble.style.left = `${percent * sliderWidth}px`;
-            }
+      // Update header title live when name changes
+      const nameInput = div.querySelector(".led-name");
+      const titleSpan = div.querySelector(".led-title");
+      nameInput.addEventListener("input", () => {
+        titleSpan.textContent = nameInput.value;
+      });
 
-            // Show bubble on drag / touch
-            sliderInput.addEventListener("mousedown", () => {
-                bubble.style.display = "block";
-                updateBubble();
-            });
-            sliderInput.addEventListener("touchstart", () => {
-                bubble.style.display = "block";
-                updateBubble();
-            });
-            // Update bubble while moving
-            sliderInput.addEventListener("input", updateBubble);
+      // Warn for D0
+      div.querySelector(".led-pin").addEventListener("change", function () {
+        const warn = div.querySelector(".warning");
+        warn.style.display = (this.value === "D0") ? "block" : "none";
+      });
 
-            // Hide bubble on release
-            sliderInput.addEventListener("mouseup", () => { bubble.style.display = "none"; });
-            sliderInput.addEventListener("touchend", () => { bubble.style.display = "none"; });
-            sliderInput.addEventListener("mouseleave", () => { bubble.style.display = "none"; }); // optional
+      document.getElementById("leds").appendChild(div);
+    }
 
-            // Expand/collapse toggle
-            const toggleBtn = div.querySelector(".toggle-btn");
-            toggleBtn.addEventListener("click", () => {
-                div.classList.toggle("expanded");
-                toggleBtn.textContent = div.classList.contains("expanded") ? "-" : "+";
-            });
+    function removeLED(btn) {
+      btn.closest(".led-block").remove();
+    }
 
-            // Update header title live when name changes
-            const nameInput = div.querySelector(".led-name");
-            const titleSpan = div.querySelector(".led-title");
-            nameInput.addEventListener("input", () => {
-                titleSpan.textContent = nameInput.value;
-            });
+    function getLEDConfig(div) {
+      return {
+        name: div.querySelector(".led-name").value,
+        pin: div.querySelector(".led-pin").value,
+      };
+    }
 
-            // Warn for D0
-            div.querySelector(".led-pin").addEventListener("change", function () {
-                const warn = div.querySelector(".warning");
-                warn.style.display = (this.value === "D0") ? "block" : "none";
-            });
+    function testLED(btn, mode) {
+      const div = btn.closest(".led-block");
+      const led = getLEDConfig(div);
+      fetch("/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...led, mode })
+      });
+    }
 
-            document.getElementById("leds").appendChild(div);
-        }
+    function saveConfig() {
+      const leds = [...document.querySelectorAll(".led-block")].map(getLEDConfig);
+      const config = {
+        channel: parseInt(document.getElementById("channel").value),
+        leds: leds
+      };
 
-        function removeLED(btn) {
-            btn.closest(".led-block").remove();
-        }
+      fetch("/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config)
+      }).then(() => alert("Config saved"));
+    }
 
-        function getLEDConfig(div) {
-            return {
-                name: div.querySelector(".led-name").value, // description
-                pin: div.querySelector(".led-pin").value, // WARNING this is the pin NAME, not integer value !!!
-                blink_interval: parseInt(div.querySelector(".blink-int").value),
-                random_interval: parseInt(div.querySelector(".rand-int").value),
-                random_midpoint: parseInt(div.querySelector(".rand-mid").value),
-                fade_interval: parseInt(div.querySelector(".fade-int").value)
-            };
-        }
+    window.onload = () => {
+      // Build the channel dropdown manually (since template literals aren't active yet)
+      const channelSelect = document.getElementById("channel");
+      channelSelect.innerHTML = "";
+      for (let i = 1; i <= 16; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        channelSelect.appendChild(opt);
+      }
 
-        function testLED(btn, mode) {
-            const div = btn.closest(".led-block");
-            const led = getLEDConfig(div);
-            fetch("/test", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...led, mode })
-            });
-        }
-
-        function saveConfig() {
-            const leds = [...document.querySelectorAll(".led-block")].map(getLEDConfig);
-            const config = {
-                universe: parseInt(document.getElementById("universe").value),
-                channel: parseInt(document.getElementById("channel").value),
-                leds: leds
-            };
-
-            fetch("/save", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(config)
-            }).then(() => alert("Config saved"));
-        }
-
-        window.onload = () => {
-            fetch("/leds.json")
-                .then(r => r.json())
-                .then(cfg => {
-                    if (cfg.universe !== undefined) document.getElementById("universe").value = cfg.universe;
-                    if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
-
-                    document.getElementById("leds").innerHTML = "";
-                    ledCounter = 0;
-                    if (cfg.leds && cfg.leds.length > 0) {
-                        cfg.leds.forEach(led => addLED(led));
-                    }
-                })
-                .catch(err => {
-                    console.error("Failed to load /leds.json", err);
-                });
-        };
-    </script>
+      fetch("/leds.json")
+        .then(r => r.json())
+        .then(cfg => {
+          if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
+          document.getElementById("leds").innerHTML = "";
+          ledCounter = 0;
+          if (cfg.leds && cfg.leds.length > 0) {
+            cfg.leds.forEach(led => addLED(led));
+          }
+        })
+        .catch(err => console.error("Failed to load /leds.json", err));
+    };
+  </script>
 </body>
 
 </html>

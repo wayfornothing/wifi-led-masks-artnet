@@ -19,8 +19,6 @@ class WiFiManager {
 private:
     using wifi_callback_t = std::function<void()>;
 
-    // const char* _ssid;
-    // const char* _pass;
     uint32_t _timeout_ms;
     uint32_t _retry_interval_ms;
     uint16_t  _attempts;
@@ -80,23 +78,25 @@ public:
 
     void connect() {
         
-        LEDDevice led(_pin_ui, "D4", 200);
+        LEDDevice led(_pin_ui, "D4");
         
         DeviceConfig& cfg = DeviceConfig::instance();
-        Serial.printf("Connecting to %s", cfg.get_SSID().c_str());
+        Serial.printf("Connecting to %s...", cfg.get_SSID().c_str());
         
-        led.start_blink();
+        // led.start_blink(default);
         WiFi.mode(WIFI_STA);
         WiFi.begin(cfg.get_SSID(), cfg.get_password());
-        
 
         unsigned long start = millis();
+        bool enable = true;
         while (WiFi.status() != WL_CONNECTED && millis() - start < _timeout_ms) {
             digitalWrite(_pin_ui, !digitalRead(_pin_ui));
-            delay(500);
+            led.enable(enable);
             Serial.print(".");
+            delay(200);
+            enable = !enable;
         }
-        
+
         led.enable(false);
         wl_status_t status = WiFi.status();
         if (status == WL_CONNECTED) {
