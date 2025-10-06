@@ -16,14 +16,17 @@
 
 typedef enum CCCommand {
     CC_LED_OFF = 22,
-    CC_LED_ON,
+    // CC_LED_ON,
     CC_LED_DIM,
     CC_LED_BLINK,
     CC_LED_FADE_IN,
     CC_LED_FADE_OUT,
     CC_LED_HEARTBEAT,
+    CC_LED_PULSE,
     CC_LED_RANDOM,
     CC_CFG_RANDOM_MID,
+    CC_CFG_HEARTBEAT_MAX,
+    CC_LAST
 } eCCCommand;
 
 #define TEST_BIT(v, b) (v & (1 << b))
@@ -171,15 +174,17 @@ private:
 
     void _process_cc(uint8_t cc, uint8_t value) {
         static const std::unordered_map<uint8_t, std::function<void(LEDDevice&, uint8_t)>> cc_actions = {
-            {CC_LED_ON,         [](LEDDevice& led, uint8_t)  { led.enable(true);            }},
-            {CC_LED_OFF,        [](LEDDevice& led, uint8_t)  { led.enable(false);           }},
-            {CC_LED_DIM,        [](LEDDevice& led, uint8_t v){ led.dim(v);                  }},
-            {CC_LED_BLINK,      [](LEDDevice& led, uint8_t v){ led.start_blink(v);          }},
-            {CC_LED_HEARTBEAT,  [](LEDDevice& led, uint8_t v){ led.start_heartbeat(v);      }},
-            {CC_LED_RANDOM,     [](LEDDevice& led, uint8_t v){ led.start_random(v);         }},
-            {CC_LED_FADE_IN,    [](LEDDevice& led, uint8_t v){ led.start_fade_in(v);        }},
-            {CC_LED_FADE_OUT,   [](LEDDevice& led, uint8_t v){ led.start_fade_out(v);       }},
-            {CC_CFG_RANDOM_MID, [](LEDDevice& led, uint8_t v){ led.set_random_midpoint(v);  }},
+            // {CC_LED_ON,             [](LEDDevice& led, uint8_t)  { led.enable(true);            }},
+            {CC_LED_OFF,            [](LEDDevice& led, uint8_t)  { led.enable(false);           }},
+            {CC_LED_DIM,            [](LEDDevice& led, uint8_t v){ led.dim(v);                  }},
+            {CC_LED_BLINK,          [](LEDDevice& led, uint8_t v){ led.blink(v);                }},
+            {CC_LED_HEARTBEAT,      [](LEDDevice& led, uint8_t v){ led.heartbeat(v);            }},
+            {CC_LED_PULSE,          [](LEDDevice& led, uint8_t v){ led.pulse(v);                }},
+            {CC_LED_RANDOM,         [](LEDDevice& led, uint8_t v){ led.random(v);               }},
+            {CC_LED_FADE_IN,        [](LEDDevice& led, uint8_t v){ led.fade_in(v);              }},
+            {CC_LED_FADE_OUT,       [](LEDDevice& led, uint8_t v){ led.fade_out(v);             }},
+            {CC_CFG_RANDOM_MID,     [](LEDDevice& led, uint8_t v){ led.set_random_midpoint(v);  }},
+            {CC_CFG_HEARTBEAT_MAX,  [](LEDDevice& led, uint8_t v){ led.set_heartbeat_max(v);    }},
         };
 
         auto it = cc_actions.find(cc);
@@ -287,17 +292,16 @@ private:
     }
 
     */
-    void _cli()
-    {
+    void _cli() {
         uint8_t all_leds = 0x7f;
         int c = Serial.read();
         if (c >= 0) {
             _process_pc(all_leds);
             switch (c) {
-            case 'E':
-                // all ON
-                _process_cc(CC_LED_ON, 1);
-                break;
+            // case 'E':
+            //     // all ON
+            //     _process_cc(CC_LED_ON, 1);
+            //     break;
             case 'e':
                 // all OFF
                 _process_cc(CC_LED_OFF, 1);
