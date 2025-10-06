@@ -86,11 +86,6 @@ public:
             String pin_name = doc["pin"].as<String>();
             int pin = DeviceConfig::pin_from_string(pin_name);
 
-            // Serial.println("--TEST--");
-            // Serial.println(mode);
-            // Serial.println(pin_name);
-            // Serial.println(pin);
-
             if (mode == "enable") {
                 static int en = 1;
                 LEDDevice led(pin, "test");
@@ -108,8 +103,6 @@ public:
             } else if (mode == "fade") {
                 LEDDevice led(pin, "test");
                 led.fade_in(DEFAULT_FADE_INTERVAL_MS);
-            // for (int i=0; i<=1023; i+=20) { analogWrite(pin, i); delay(10); }
-            // for (int i=1023; i>=0; i-=20) { analogWrite(pin, i); delay(10); }
             }
             _server.send(200, "text/plain", "OK");
         });

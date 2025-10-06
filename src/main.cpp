@@ -13,15 +13,12 @@ void setup() {
 
     Serial.printf("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
 
-    pinMode(PIN_RESET_BUTTON, INPUT /* TODO: use INPUT with D0 pin */);
+    pinMode(PIN_RESET_BUTTON, INPUT);
     delay(100);
     if (digitalRead(PIN_RESET_BUTTON) == LOW) {
         // start captive portal
         Serial.println("Force config portal");
-                
-        WiFiCaptivePortal::start_captive_portal();
-
-        // this is blocking until reboot
+        WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot
     }
 
     _device.begin();

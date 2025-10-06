@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-// #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
 #include <ArtnetWifi.h>
 
@@ -16,7 +15,6 @@
 
 typedef enum CCCommand {
     CC_LED_OFF = 0,
-    // CC_LED_ON,
     CC_LED_DIM,
     CC_LED_BLINK,
     CC_LED_FADE_IN,
@@ -46,34 +44,25 @@ public:
                _web(ConfigWebServer()) {
     }
 
-    void begin()
-    {
+    void begin() {
 
         DeviceConfig &_config = DeviceConfig::instance();
 
         // at startup, turn all leds OFF
-        for (auto &led : _config.get_leds())
-        {
+        for (auto &led : _config.get_leds()) {
             Serial.printf("Will create LED %s\n", led.name.c_str());
-
-            // LEDDevice led = LEDDevice(led_cfg.pin, led_cfg.name);
-            // led.blink_interval_ms = led_cfg.blink_ms;
-            // led.random_interval_ms = led_cfg.random_ms;
-            // led.random_midpoint = led_cfg.random_midpoint;
-            // led.fade_interval_ms = led_cfg.fade_ms;
             _leds.push_back(led);
         }
 
-        _wifi.on_disconnect([=]()
-                            {
+        _wifi.on_disconnect([=]() {
             Serial.println("WiFi disconnected! Will retry...");
             // network issue happened, turn all the pins ON
             for (auto& led : _leds) {
                 led.enable(true);
-            } });
+            }
+        });
 
-        _wifi.on_connect([&]()
-                         {
+        _wifi.on_connect([&]() {
             Serial.println("WiFi connected!");
             // network restored, turn all the pins OFF
             for (auto& led : _leds) {
@@ -84,7 +73,6 @@ public:
             _web.begin();
 
             // wait for artnet messages
-            // DeviceConfig& cfg = DeviceConfig::instance();
             const String hostname = _config.get_hostname();
             _wifi.set_hostname(hostname.c_str());
             if (MDNS.begin(hostname)) {
@@ -96,17 +84,18 @@ public:
 
             _artnet.begin(); });
 
-        _wifi.on_connect_failed([=]()
-                                {
+            _wifi.on_connect_failed([=]() {
             // max connection attempts reached, turn all the pins ON
             for (auto& led : _leds) {
                 led.enable(true);
-            } });
+            } 
+        });
     }
 
-    void tick()
-    {
+    void tick() {
+#ifdef USE_CLI
         _cli();
+#endif
 
         // keep service running
         MDNS.update();
@@ -176,7 +165,6 @@ private:
 
     void _process_cc(uint8_t cc, uint8_t value) {
         static const std::unordered_map<uint8_t, std::function<void(LEDDevice&, uint8_t)>> cc_actions = {
-            // {CC_LED_ON,             [](LEDDevice& led, uint8_t)  { led.enable(true);            }},
             {CC_LED_OFF,            [](LEDDevice& led, uint8_t)  { led.enable(false);           }},
             {CC_LED_DIM,            [](LEDDevice& led, uint8_t v){ led.dim(v);                  }},
             {CC_LED_BLINK,          [](LEDDevice& led, uint8_t v){ led.blink(v);                }},

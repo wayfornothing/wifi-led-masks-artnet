@@ -8,34 +8,23 @@
 #include "led_device.h"
 
 class DeviceConfig {
-public:    
-    const String WIFI_CONFIG_FILE = "/wifi.json";
-    const String LEDS_CONFIG_FILE = "/leds.json";
 private:
 
+    const String WIFI_CONFIG_FILE = "/wifi.json";
+    const String LEDS_CONFIG_FILE = "/leds.json";
+
     // Singleton
-    DeviceConfig() : /* universe(0), cc(22),*/ channel(1) {
+    DeviceConfig() : _channel(1) {
         load();
     }
     DeviceConfig(const DeviceConfig&) = delete;
     DeviceConfig& operator=(const DeviceConfig&) = delete;
 
     // Configuration fields
-    String hostname;
-    String ssid;
-    String pass;
-    // uint16_t universe;
-    // uint16_t cc;
-    uint16_t channel;
-
-    // struct LEDConfig {
-    //     String name; // user's description
-    //     int pin; // hardware pin
-    //     uint16_t blink_ms;
-    //     uint16_t random_ms;
-    //     uint8_t random_mid;
-    //     uint16_t fade_ms;
-    // };
+    String _hostname;
+    String _ssid;
+    String _pass;
+    uint16_t _channel;
 
     std::vector<LEDDevice> _leds;
 
@@ -60,7 +49,6 @@ public:
         if (pin_name == "D10") return D10;
         return PIN_INVALID;
     }
-
 
     bool load() {
         if (!LittleFS.begin()) {
@@ -91,9 +79,9 @@ public:
             return false;
         }
 
-        hostname = wifi_json["hostname"] | "esp8266-device";
-        ssid     = wifi_json["ssid"]     | "";
-        pass     = wifi_json["pass"]     | "";
+        _hostname = wifi_json["hostname"] | "esp8266-device";
+        _ssid     = wifi_json["ssid"]     | "";
+        _pass     = wifi_json["pass"]     | "";
 
         // LEDS
         if (!LittleFS.exists(LEDS_CONFIG_FILE)) {
@@ -116,10 +104,7 @@ public:
             return false;
         }
 
-        // universe = leds_json["universe"]   | 0;
-        // cc = leds_json["cc"]   | 22;
-        channel  = leds_json["channel"] | 1;
-
+        _channel  = leds_json["channel"] | 1;
         _leds.clear();
         if (leds_json.containsKey("leds")) {
             for (JsonObject led_json : leds_json["leds"].as<JsonArray>()) {
@@ -127,11 +112,7 @@ public:
                 auto name = led_json["name"];
                 auto pin = pin_from_string(led_json["pin"]);
                 if (pin != PIN_INVALID) {
-                    LEDDevice led = LEDDevice(pin, 
-                                              name, 
-                                              //led_json["blink_interval"]  | DEFAULT_BLINK_INTERVAL_MS,
-                                              //led_json["random_interval"] | DEFAULT_RANDOM_INTERVAL_MS,
-                                              led_json["random_midpoint"] | DEFAULT_RANDOM_MIDPOINT);
+                    LEDDevice led = LEDDevice(pin, name);
                     _leds.push_back(led);
                 }
                 else {
@@ -146,12 +127,9 @@ public:
     }
 
     void debug() {
-        Serial.println(hostname);
-        Serial.println(ssid);
-        // Serial.println(pass);
-        // Serial.printf("UNI: %d\n", universe);
-        // Serial.printf("CC: %d\n", cc);
-        Serial.printf("CHAN: %d\n", channel);
+        Serial.println(_hostname);
+        Serial.println(_ssid);
+        Serial.printf("CHAN: %d\n", _channel);
     }
 
     bool save_wifi() {
@@ -162,9 +140,9 @@ public:
         }
 
         DynamicJsonDocument doc(2048);
-        doc["hostname"] = hostname;
-        doc["ssid"]     = ssid;
-        doc["pass"]     = pass;
+        doc["hostname"] = _hostname;
+        doc["ssid"]     = _ssid;
+        doc["pass"]     = _pass;
 
         File f = LittleFS.open(WIFI_CONFIG_FILE, "w");
         if (!f) {
@@ -178,8 +156,7 @@ public:
         debug();
         return true;
     }
-    
-    
+        
     bool save_leds(String& raw_json) {
         bool ret = false;
         String file = LEDS_CONFIG_FILE;
@@ -197,23 +174,17 @@ public:
     
     // Accessors
     // TODO: meh ?
-    const String& get_hostname() const { return hostname; }
-    void set_hostname(const String& h) { hostname = h; }
+    const String& get_hostname() const { return _hostname; }
+    void set_hostname(const String& h) { _hostname = h; }
 
-    const String& get_SSID() const { return ssid; }
-    void set_SSID(const String& s) { ssid = s; }
+    const String& get_SSID() const { return _ssid; }
+    void set_SSID(const String& s) { _ssid = s; }
 
-    const String& get_password() const { return pass; }
-    void set_password(const String& p) { pass = p; }
+    const String& get_password() const { return _pass; }
+    void set_password(const String& p) { _pass = p; }
 
-    // uint16_t get_universe() const { return universe; }
-    // void set_universe(uint16_t u) { universe = u; }
-    
-    // uint16_t get_cc() const { return cc; }
-    // void set_cc(uint16_t c) { cc = c; }
-    
-    uint16_t get_channel() const { return channel; }
-    void set_channel(uint16_t c) { channel = c; }
+    uint16_t get_channel() const { return _channel; }
+    void set_channel(uint16_t c) { _channel = c; }
 
     std::vector<LEDDevice>& get_leds() { return _leds; }
 };

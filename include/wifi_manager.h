@@ -47,8 +47,6 @@ public:
                 uint32_t retry_interval_ms,
                 uint16_t max_attempts,
                 uint8_t pin_ui) :
-        // _ssid(ssid),
-        // _pass(pass),
         _timeout_ms(timeout_ms),
         _retry_interval_ms(retry_interval_ms),
         _attempts(0),
@@ -83,7 +81,6 @@ public:
         DeviceConfig& cfg = DeviceConfig::instance();
         Serial.printf("Connecting to %s...", cfg.get_SSID().c_str());
         
-        // led.start_blink(default);
         WiFi.mode(WIFI_STA);
         WiFi.begin(cfg.get_SSID(), cfg.get_password());
 

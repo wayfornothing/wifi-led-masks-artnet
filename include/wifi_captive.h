@@ -33,16 +33,9 @@ class WiFiCaptivePortal {
         });
 
         server.on("/", HTTP_GET, [&server]() {
-            // String page = "<html><body><h1>WiFi Config</h1>"
-            //               "<form method='POST' action='/save'>"
-            //               "SSID: <input name='ssid'><br>"
-            //               "Password: <input name='password' type='password'><br>"
-            //               "Device name: <input name='hostname'><br>"
-            //               "<input type='submit' value='Save'>"
-            //               "</form></body></html>";
             server.send(200, "text/html", CAPTIVE_HTML);
-
         });
+        
         server.on("/save", HTTP_POST, [&server]() {
             const String ssid = server.arg("ssid");
             const String pass = server.arg("password");
@@ -63,7 +56,7 @@ class WiFiCaptivePortal {
 
         Serial.printf("Captive portal started at %s\nConnect to SSID: %s\n", WiFi.softAPIP().toString().c_str(), AP_NAME);
 
-        // blocking
+        // blocking on purpose
         while (1) {
             dns.processNextRequest();
             server.handleClient();
