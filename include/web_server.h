@@ -99,7 +99,6 @@ public:
             else if (mode == "random") {
                 LEDDevice led(pin, "test");
                 led.random(DEFAULT_RANDOM_INTERVAL_MS);
-            // // analogWrite(pin, random(0, 1024));
             } else if (mode == "fade") {
                 LEDDevice led(pin, "test");
                 led.fade_in(DEFAULT_FADE_INTERVAL_MS);

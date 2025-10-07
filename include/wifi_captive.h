@@ -48,7 +48,7 @@ class WiFiCaptivePortal {
             cfg.save_wifi();
 
             server.send(200, "text/html", "<html><body><h1>Saved. Rebooting...</h1></body></html>");
-            delay(1000);
+            delay_ms(1000);
             ESP.restart();
 
         });

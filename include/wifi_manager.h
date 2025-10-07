@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Arduino.h>
+// #include <Arduino.h>
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
 #include <functional>
 
+#include "hal/hal.h"
 #include "led_device.h"
 
 /**
@@ -55,7 +56,7 @@ public:
         _pin_ui(pin_ui),
         _connected(false),
         _active(true) {
-            pinMode(_pin_ui, OUTPUT);
+            pin_set_output(_pin_ui);
     }
 
     void on_disconnect(wifi_callback_t cb) {
@@ -87,10 +88,10 @@ public:
         unsigned long start = millis();
         bool enable = true;
         while (WiFi.status() != WL_CONNECTED && millis() - start < _timeout_ms) {
-            digitalWrite(_pin_ui, !digitalRead(_pin_ui));
+            pin_digital_write(_pin_ui, !pin_digital_read(_pin_ui));
             led.enable(enable);
             Serial.print(".");
-            delay(200);
+            delay_ms(200);
             enable = !enable;
         }
 

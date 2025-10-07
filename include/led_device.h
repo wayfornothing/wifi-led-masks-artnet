@@ -1,19 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
-#include <Ticker.h>
-
+#include "hal/hal.h"
 #include "utils.h"
 
-// typedef enum {
-//     LED_STATUS_IDLE,
-//     LED_STATUS_BLINK,
-//     LED_STATUS_FADING,
-//     LED_STATUS_FADE_OUT,
-//     LED_STATUS_RANDOM
-// } eLEDStatus;   
-
-// TODO: config thru web, this depends on LED type
 #define FADE_MIN (0)
 #define FADE_MAX (0xff)
 
@@ -47,7 +36,7 @@ public:
         _selected(false) {
         set_random_midpoint(random_midpoint_percent);
         set_heartbeat_max(heartbeat_max);
-        pinMode(_pin, OUTPUT);
+        pin_set_output(_pin);
         Serial.printf("Created LED %s at pin %d\n", name.c_str(), pin);
     }
 
@@ -127,7 +116,7 @@ public:
     void enable(bool enabled) {
         _ticker.detach();
         // Serial.printf("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
-        digitalWrite(_pin, enabled ? HIGH : LOW);
+        pin_write_digital(_pin, enabled ? HIGH : LOW);
     }
 
     void dim(uint8_t value) {
@@ -135,7 +124,7 @@ public:
         value *= 2;
         int analog_value = _dim_tab[value];
         Serial.printf("DIM %s %d an %d\n", name.c_str(), value, analog_value);
-        analogWrite(_pin, analog_value);
+        pin_write_analog(_pin, analog_value);
     }
 
     void set_random_midpoint(uint8_t percent) {
@@ -149,13 +138,13 @@ public:
     }
 
 private:
-    uint8_t     _pin;
-    bool        _selected;
-    int         _random_midpoint;
-    int         _heartbeat_max;
-    int         _heartbeat_delta = 1;
-    Ticker      _ticker;
-    int         _fade_idx = FADE_MIN;
+    uint8_t         _pin;
+    bool            _selected;
+    int             _random_midpoint;
+    int             _heartbeat_max;
+    int             _heartbeat_delta = 1;
+    TickerWrapper   _ticker;
+    int             _fade_idx = FADE_MIN;
     static constexpr uint8_t _dim_tab[256] = {
         0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
         0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -173,16 +162,16 @@ private:
     };
 
     void _toggle() {
-        digitalWrite(_pin, !digitalRead(_pin));
+        pin_write_digital(_pin, !pin_read_digital(_pin));
     }
 
     void _randomize() {
         bool enabled = rand() > _random_midpoint;
-        digitalWrite(_pin, enabled ? LOW : HIGH);
+        pin_write_digital(_pin, enabled ? LOW : HIGH);
     }
 
     void _fade_in() {
-        analogWrite(_pin, _dim_tab[_fade_idx++]);
+        pin_write_analog(_pin, _dim_tab[_fade_idx++]);
         if (_fade_idx == FADE_MAX) {
             // fade finished
             _fade_idx = FADE_MIN;
@@ -191,7 +180,7 @@ private:
     }
     
     void _fade_out() {
-        analogWrite(_pin, _dim_tab[_fade_idx--]);
+        pin_write_analog(_pin, _dim_tab[_fade_idx--]);
         if (_fade_idx == FADE_MIN) {
             // fade finished
             _fade_idx = FADE_MAX;
@@ -201,7 +190,7 @@ private:
 
     void _heartbeat(bool repeat) {
         _fade_idx += _heartbeat_delta;
-        analogWrite(_pin, _dim_tab[_fade_idx]);
+        pin_write_analog(_pin, _dim_tab[_fade_idx]);
         if (_fade_idx == _heartbeat_max) {
             // fade in finished
             _heartbeat_delta = -1;

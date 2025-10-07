@@ -29,7 +29,7 @@ typedef enum CCCommand {
 
 #define TEST_BIT(v, b) (v & (1 << b))
 
-class Device
+class MaskDevice
 {
 
 private:
@@ -40,8 +40,8 @@ private:
     std::vector<LEDDevice>  _leds;
 
 public:
-    Device() : _wifi(10'000, 2'000, 20, LED_BUILTIN),
-               _web(ConfigWebServer()) {
+    MaskDevice() : _wifi(10'000, 2'000, 20, LED_BUILTIN),
+                   _web(ConfigWebServer()) {
     }
 
     void begin() {
