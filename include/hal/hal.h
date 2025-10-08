@@ -31,7 +31,27 @@ int wifi_get_status() {
     return WiFi.status();
 }
 
+#define PIN_INVALID (0xff)
+uint8_t pin_from_string(const String& pin_name) {
+    if (pin_name == "D0") return D0;
+    if (pin_name == "D1") return D1;
+    if (pin_name == "D2") return D2;
+    if (pin_name == "D3") return D3;
+    if (pin_name == "D4") return D4;
+    if (pin_name == "D5") return D5;
+    if (pin_name == "D6") return D6;
+    if (pin_name == "D7") return D7;
+    if (pin_name == "D8") return D8;
+    if (pin_name == "D9") return D9;
+    if (pin_name == "D10") return D10;
+    return PIN_INVALID;
+}
+
 #define WebServer ESP8266WebServer
+
+void dns_update() {
+    MDNS.update();
+}
 #endif
 
 
@@ -44,7 +64,7 @@ int wifi_get_status() {
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <ArtnetWifi.h>
-#include <mDNS.h>
+#include <ESPmDNS.h>
 
 void reboot() {
     ESP.restart();
@@ -66,6 +86,25 @@ const char* wifi_get_local_ip() {
 
 int wifi_get_status() {
     return WiFi.status();
+}
+
+#define PIN_INVALID (0xff)
+uint8_t pin_from_string(const String& pin_name) {
+    if (pin_name == "D0") return D0;
+    if (pin_name == "D1") return D1;
+    if (pin_name == "D2") return D2;
+    if (pin_name == "D3") return D3;
+    if (pin_name == "D4") return D4;
+    if (pin_name == "D5") return D5;
+    if (pin_name == "D6") return D6;
+    if (pin_name == "D7") return D7;
+    if (pin_name == "D8") return D8;
+    // if (pin_name == "D9") return D9;
+    // if (pin_name == "D10") return D10;
+    return PIN_INVALID;
+}
+
+void dns_update() {
 }
 
 #endif

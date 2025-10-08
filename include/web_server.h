@@ -84,7 +84,7 @@ public:
             deserializeJson(doc, body);
             String mode = doc["mode"].as<String>();
             String pin_name = doc["pin"].as<String>();
-            int pin = DeviceConfig::pin_from_string(pin_name);
+            int pin = pin_from_string(pin_name);
 
             if (mode == "enable") {
                 static int en = 1;

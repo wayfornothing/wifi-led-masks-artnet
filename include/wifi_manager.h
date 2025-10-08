@@ -11,7 +11,7 @@
  * If wifi connection succeeds, a callback is triggered, and the connection is checked at every tick.
  * If wifi connection fails (or times out), a callback is triggered, and the connection is retried.
  * If the max number of retries is reached, this wifi manager is disabled until reset.
- */
+ */ 
 class WiFiManager {
 
 private:

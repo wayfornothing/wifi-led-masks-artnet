@@ -1,5 +1,8 @@
 #pragma once
 
+#include <unordered_map>
+#include <functional>
+
 #include "hal/hal.h"
 #include "device_config.h"
 #include "web_server.h"
@@ -37,8 +40,8 @@ private:
     std::vector<LEDDevice>  _leds;
 
 public:
-    MaskDevice() : _wifi(10000, 2000, 20, LED_BUILTIN),
-                   _web(ConfigWebServer()) {
+    MaskDevice() : _wifi(10000, 2000, 20, LED_BUILTIN), 
+                   _web() {
     }
 
     void begin() {
@@ -96,8 +99,8 @@ public:
 #endif
 
         // keep service running
-        MDNS.update();
-
+        dns_update();
+        
         // check wifi status
         _wifi.tick();
 

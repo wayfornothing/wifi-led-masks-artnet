@@ -14,7 +14,7 @@ class WiFiCaptivePortal {
         LEDDevice led(LED_BUILTIN, "");
         led.blink(DEFAULT_BLINK_INTERVAL_MS);
 
-        ESP8266WebServer server(80);
+        WebServer server(80);
         DNSServer dns;
         WiFi.mode(WIFI_AP);
         WiFi.softAP(AP_NAME);
