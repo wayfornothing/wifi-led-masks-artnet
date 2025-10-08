@@ -76,10 +76,7 @@ public:
             const char* hostname = _config.get_hostname().c_str();
             _wifi.set_hostname(hostname);
             if (MDNS.begin(hostname)) {
-                Logger::info("mDNS responder started, browse to: ");
-                Logger::info("http://");
-                Logger::info(hostname);
-                Logger::info(".local");
+                Logger::info("mDNS responder started, browse to: http://%s.local", hostname);
             }
 
             _artnet.begin(); 

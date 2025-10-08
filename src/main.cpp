@@ -6,18 +6,17 @@
 #include "wifi_captive.h"
 
 MaskDevice _device;
-#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
 
 void setup() {
     
     Logger::begin_hw();
     delay_ms(100);
-
+    
     Logger::info("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
-
-    pin_set_input(PIN_RESET_BUTTON);
+    
+    config_reset_button();
     delay_ms(100);
-    if (pin_digital_read(PIN_RESET_BUTTON) == LOW) {
+    if (is_reset_button_pressed()) {
         // start captive portal
         Logger::info("Force config portal");
         WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot

@@ -1,5 +1,42 @@
 #pragma once
 
+#ifdef ARDUINO
+
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <LittleFS.h>
+
+#include "arduino/Logger.h"
+#include "arduino/TickerWrapper.h"
+
+// GPIO
+inline void pin_set_output(int pin) {
+    pinMode(pin, OUTPUT);
+}
+
+inline void pin_set_input(int pin) {
+    pinMode(pin, INPUT);
+}
+
+inline void pin_digital_write(int pin, bool enable) {
+    digitalWrite(pin, enable);
+}
+
+inline bool pin_digital_read(int pin) {
+    return digitalRead(pin);
+}
+
+inline void pin_analog_write(int pin, int value) {
+    analogWrite(pin, value);
+}
+
+void delay_ms(unsigned long ms) {
+    delay(ms);
+}
+
+#endif
+
+
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -52,8 +89,16 @@ uint8_t pin_from_string(const String& pin_name) {
 void dns_update() {
     MDNS.update();
 }
-#endif
 
+#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
+void config_reset_button() {
+    pin_set_input(PIN_RESET_BUTTON);
+}
+
+bool is_reset_button_pressed() {
+    return pin_digital_read(PIN_RESET_BUTTON) == LOW;
+}
+#endif
 
 
 #ifdef ESP32
@@ -107,41 +152,12 @@ uint8_t pin_from_string(const String& pin_name) {
 void dns_update() {
 }
 
+#define PIN_RESET_BUTTON (D2) // add a 10k resistor from D0 to 3v3R
+void config_reset_button() {
+    pin_set_input(PIN_RESET_BUTTON);
+}
+
+bool is_reset_button_pressed() {
+    return pin_digital_read(PIN_RESET_BUTTON) == HIGH;
+}
 #endif
-
-#ifdef ARDUINO
-
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include <LittleFS.h>
-
-#include "arduino/Logger.h"
-#include "arduino/TickerWrapper.h"
-
-// GPIO
-inline void pin_set_output(int pin) {
-    pinMode(pin, OUTPUT);
-}
-
-inline void pin_set_input(int pin) {
-    pinMode(pin, INPUT);
-}
-
-inline void pin_digital_write(int pin, bool enable) {
-    digitalWrite(pin, enable);
-}
-
-inline bool pin_digital_read(int pin) {
-    return digitalRead(pin);
-}
-
-inline void pin_analog_write(int pin, int value) {
-    analogWrite(pin, value);
-}
-
-void delay_ms(unsigned long ms) {
-    delay(ms);
-}
-
-#endif
-

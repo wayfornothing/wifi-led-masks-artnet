@@ -70,9 +70,17 @@ public:
 
         // LEDS
         if (!LittleFS.exists(LEDS_CONFIG_FILE)) {
-            // TODO: error mgmt
-            Logger::error("LEDS: CFG ERR");
-            return false;
+            Logger::warn("LEDS: no config, creating default...");
+            File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "w");
+            if (leds_file) {
+                leds_file.print("{}"); // empty json
+                leds_file.close();
+            }
+            else {
+                // TODO: error mgmt
+                Logger::error("LEDS: DEFAULT OPEN ERR");
+                return false;
+            }
         }
         File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "r");
         if (!leds_file) {
