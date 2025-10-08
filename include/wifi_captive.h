@@ -1,12 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <DNSServer.h>
-#include <LittleFS.h>
-#include <ArduinoJson.h>
-
+#include "hal/hal.h"
 #include "device_config.h"
 #include "captive.html.h"
 
@@ -49,7 +43,7 @@ class WiFiCaptivePortal {
 
             server.send(200, "text/html", "<html><body><h1>Saved. Rebooting...</h1></body></html>");
             delay_ms(1000);
-            ESP.restart();
+            reboot();
 
         });
         server.begin();

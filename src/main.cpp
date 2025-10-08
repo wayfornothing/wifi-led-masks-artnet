@@ -17,7 +17,7 @@ void setup() {
 
     pin_set_input(PIN_RESET_BUTTON);
     delay_ms(100);
-    if (pin_read_digital(PIN_RESET_BUTTON) == LOW) {
+    if (pin_digital_read(PIN_RESET_BUTTON) == LOW) {
         // start captive portal
         Logger::info("Force config portal");
         WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot

@@ -1,12 +1,14 @@
 #pragma once
 
-#include <Arduino.h>
-
+#include "hal/hal.h"
 #include "index.html.h"
 #include "led_device.h"
 #include "device_config.h"
 
 class ConfigWebServer {
+private:
+    WebServer _server;
+
 public:
     ConfigWebServer()
         : _server(80) {
@@ -106,7 +108,4 @@ public:
 
         _server.begin();
     }
-
-private:
-    ESP8266WebServer _server;
 };

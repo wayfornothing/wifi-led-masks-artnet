@@ -69,7 +69,7 @@ public:
     }
 
     void set_hostname(const char *name) {
-        WiFi.hostname(name);
+        wifi_set_hostname(name);
     }
 
     void connect() {
@@ -79,13 +79,12 @@ public:
         DeviceConfig& cfg = DeviceConfig::instance();
         Logger::info("Connecting to %s...", cfg.get_SSID().c_str());
         
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(cfg.get_SSID(), cfg.get_password());
+        wifi_connect_to_ap(cfg.get_SSID().c_str(), cfg.get_password().c_str());
 
         unsigned long start = millis();
         bool enable = true;
-        while (WiFi.status() != WL_CONNECTED && millis() - start < _timeout_ms) {
-            pin_write_digital(_pin_ui, !pin_read_digital(_pin_ui));
+        while (wifi_get_status() != WL_CONNECTED && millis() - start < _timeout_ms) {
+            pin_digital_write(_pin_ui, !pin_digital_read(_pin_ui));
             led.enable(enable);
             Logger::info(".");
             delay_ms(200);
@@ -93,9 +92,9 @@ public:
         }
 
         led.enable(false);
-        wl_status_t status = WiFi.status();
+        int status = wifi_get_status();
         if (status == WL_CONNECTED) {
-            Logger::info("\nConnected with IP: %s\n", WiFi.localIP().toString().c_str());
+            Logger::info("\nConnected with IP: %s\n", wifi_get_local_ip());
             _connected = true;
             _on_connect();
         } else {
@@ -107,7 +106,7 @@ public:
 
     void tick() {
         if (_active) {
-            if (WiFi.status() == WL_CONNECTED) {
+            if (wifi_get_status() == WL_CONNECTED) {
                 if (_connected == false) {
                     // network restored, trigger callback just once
                     Logger::info("Connection restored !!\n");
@@ -155,6 +154,6 @@ public:
     }
 
     bool is_connected() const {
-        return WiFi.status() == WL_CONNECTED;
+        return wifi_get_status() == WL_CONNECTED;
     }
 };

@@ -115,7 +115,7 @@ public:
     void enable(bool enabled) {
         _ticker.detach();
         // Logger::info("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
-        pin_write_digital(_pin, enabled ? HIGH : LOW);
+        pin_digital_write(_pin, enabled ? HIGH : LOW);
     }
 
     void dim(uint8_t value) {
@@ -123,7 +123,7 @@ public:
         value *= 2;
         int analog_value = _dim_tab[value];
         Logger::info("DIM %s %d an %d\n", name.c_str(), value, analog_value);
-        pin_write_analog(_pin, analog_value);
+        pin_analog_write(_pin, analog_value);
     }
 
     void set_random_midpoint(uint8_t percent) {
@@ -161,16 +161,16 @@ private:
     };
 
     void _toggle() {
-        pin_write_digital(_pin, !pin_read_digital(_pin));
+        pin_digital_write(_pin, !pin_digital_read(_pin));
     }
 
     void _randomize() {
         bool enabled = rand() > _random_midpoint;
-        pin_write_digital(_pin, enabled ? LOW : HIGH);
+        pin_digital_write(_pin, enabled ? LOW : HIGH);
     }
 
     void _fade_in() {
-        pin_write_analog(_pin, _dim_tab[_fade_idx++]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx++]);
         if (_fade_idx == FADE_MAX) {
             // fade finished
             _fade_idx = FADE_MIN;
@@ -179,7 +179,7 @@ private:
     }
     
     void _fade_out() {
-        pin_write_analog(_pin, _dim_tab[_fade_idx--]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx--]);
         if (_fade_idx == FADE_MIN) {
             // fade finished
             _fade_idx = FADE_MAX;
@@ -189,7 +189,7 @@ private:
 
     void _heartbeat(bool repeat) {
         _fade_idx += _heartbeat_delta;
-        pin_write_analog(_pin, _dim_tab[_fade_idx]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx]);
         if (_fade_idx == _heartbeat_max) {
             // fade in finished
             _heartbeat_delta = -1;

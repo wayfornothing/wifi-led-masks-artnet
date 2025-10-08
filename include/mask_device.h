@@ -1,9 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ESP8266mDNS.h>
-#include <ArtnetWifi.h>
-
+#include "hal/hal.h"
 #include "device_config.h"
 #include "web_server.h"
 #include "wifi_manager.h"
@@ -40,7 +37,7 @@ private:
     std::vector<LEDDevice>  _leds;
 
 public:
-    MaskDevice() : _wifi(10'000, 2'000, 20, LED_BUILTIN),
+    MaskDevice() : _wifi(10000, 2000, 20, LED_BUILTIN),
                    _web(ConfigWebServer()) {
     }
 

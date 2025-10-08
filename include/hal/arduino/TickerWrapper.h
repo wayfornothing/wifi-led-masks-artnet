@@ -34,18 +34,6 @@ public:
         _active = false;
     }
 
-    void restart() {
-        if (_active && _interval > 0) {
-            // On redétache, puis réattache la même fonction
-            // ⚠️ Ticker ne stocke pas le callback accessible directement,
-            // donc il faut normalement réattacher manuellement (selon ton design).
-            // Ici, on ne peut pas le faire sans callback sauvegardé.
-            _ticker.detach();
-            _active = false;
-            // (Facultatif : tu peux étendre la classe pour mémoriser le callback)
-        }
-    }
-
     bool isActive() const {
         return _active;
     }
