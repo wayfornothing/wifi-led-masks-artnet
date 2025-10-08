@@ -50,12 +50,12 @@ public:
 
         // at startup, turn all leds OFF
         for (auto &led : _config.get_leds()) {
-            Serial.printf("Will create LED %s\n", led.name.c_str());
+            Logger::info("Will create LED %s\n", led.name.c_str());
             _leds.push_back(led);
         }
 
         _wifi.on_disconnect([=]() {
-            Serial.println("WiFi disconnected! Will retry...");
+            Logger::warn("WiFi disconnected! Will retry...");
             // network issue happened, turn all the pins ON
             for (auto& led : _leds) {
                 led.enable(true);
@@ -63,7 +63,7 @@ public:
         });
 
         _wifi.on_connect([&]() {
-            Serial.println("WiFi connected!");
+            Logger::info("WiFi connected!");
             // network restored, turn all the pins OFF
             for (auto& led : _leds) {
                 led.enable(false);
@@ -73,16 +73,17 @@ public:
             _web.begin();
 
             // wait for artnet messages
-            const String hostname = _config.get_hostname();
-            _wifi.set_hostname(hostname.c_str());
+            const char* hostname = _config.get_hostname().c_str();
+            _wifi.set_hostname(hostname);
             if (MDNS.begin(hostname)) {
-                Serial.print(F("mDNS responder started, browse to: "));
-                Serial.print(F("http://"));
-                Serial.print(hostname);
-                Serial.println(F(".local"));
+                Logger::info("mDNS responder started, browse to: ");
+                Logger::info("http://");
+                Logger::info(hostname);
+                Logger::info(".local");
             }
 
-            _artnet.begin(); });
+            _artnet.begin(); 
+        });
 
             _wifi.on_connect_failed([=]() {
             // max connection attempts reached, turn all the pins ON
@@ -117,12 +118,12 @@ public:
 
                 switch (type) {
                 case MIDI_TYPE_PC:
-                    Serial.printf("PC %d\n", number);
+                    Logger::info("PC %d\n", number);
                     _process_pc(number);
                     break;
 
                 case MIDI_TYPE_CC:
-                    // Serial.printf("CC %d val %d\n", number, value);
+                    // Logger::info("CC %d val %d\n", number, value);
                     if (value > 0) {
                         _process_cc(number, value);
                     }
@@ -131,7 +132,7 @@ public:
                 case MIDI_TYPE_NOTE: {
                     uint8_t led_idx = number / CC_LAST;
                     uint8_t cc = number % CC_LAST;
-                    // Serial.printf("Note%s %d vel %d idx %d cc %d\n", value == 0 ? "Off" : "On", number, value, led_idx, cc);
+                    // Logger::info("Note%s %d vel %d idx %d cc %d\n", value == 0 ? "Off" : "On", number, value, led_idx, cc);
                     if (led_idx < _leds.size()) {
                         if (value > 0) {
                             LEDDevice& led = _leds.at(led_idx);

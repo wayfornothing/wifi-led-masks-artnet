@@ -1,6 +1,19 @@
 #pragma once
 
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+#endif
+
+#ifdef ESP32
+#endif
+
 #ifdef ARDUINO
+
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <LittleFS.h>
 
 #include "arduino/Logger.h"
 #include "arduino/TickerWrapper.h"
@@ -31,3 +44,4 @@ void delay_ms(unsigned long ms) {
 }
 
 #endif
+

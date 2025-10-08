@@ -54,7 +54,7 @@ class WiFiCaptivePortal {
         });
         server.begin();
 
-        Serial.printf("Captive portal started at %s\nConnect to SSID: %s\n", WiFi.softAPIP().toString().c_str(), AP_NAME);
+        Logger::info("Captive portal started at %s\nConnect to SSID: %s\n", WiFi.softAPIP().toString().c_str(), AP_NAME);
 
         // blocking on purpose
         while (1) {

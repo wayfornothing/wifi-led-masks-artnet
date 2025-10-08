@@ -1,10 +1,9 @@
 #pragma once
 
-#include <ArduinoJson.h>
-#include <LittleFS.h>
 #include <map>
 #include <string>
 
+#include "hal/hal.h"
 #include "led_device.h"
 
 class DeviceConfig {
@@ -53,7 +52,7 @@ public:
     bool load() {
         if (!LittleFS.begin()) {
             // TODO: error mgmt
-            Serial.println(F("WIFI/LEDS: LFS ERR"));
+            Logger::error("WIFI/LEDS: LFS ERR");
             // TODO: error mgmt
             return false;
         }
@@ -61,13 +60,13 @@ public:
         // WIFI
         if (!LittleFS.exists(WIFI_CONFIG_FILE)) {
             // TODO: error mgmt
-            Serial.println(F("WIFI: CFG ERR"));
+            Logger::error("WIFI: CFG ERR");
             return false;
         }
         File wifi_file = LittleFS.open(WIFI_CONFIG_FILE, "r");
         if (!wifi_file) {
             // TODO: error mgmt
-            Serial.println(F("WIFI: OPEN ERR"));
+            Logger::error("WIFI: OPEN ERR");
             return false;
         }
         DynamicJsonDocument wifi_json(2048);
@@ -75,7 +74,7 @@ public:
         wifi_file.close();
         if (err) {
             // TODO: error mgmt
-            Serial.println(F("WIFI: JSON ERR"));
+            Logger::error("WIFI: JSON ERR");
             return false;
         }
 
@@ -86,13 +85,13 @@ public:
         // LEDS
         if (!LittleFS.exists(LEDS_CONFIG_FILE)) {
             // TODO: error mgmt
-            Serial.println(F("LEDS: CFG ERR"));
+            Logger::error("LEDS: CFG ERR");
             return false;
         }
         File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "r");
         if (!leds_file) {
             // TODO: error mgmt
-            Serial.println(F("LEDS: OPEN ERR"));
+            Logger::error("LEDS: OPEN ERR");
             return false;
         }
         DynamicJsonDocument leds_json(2048);
@@ -100,7 +99,7 @@ public:
         leds_file.close();
         if (err) {
             // TODO: error mgmt
-            Serial.println(F("WIFI: JSON ERR"));
+            Logger::error("WIFI: JSON ERR");
             return false;
         }
 
@@ -121,21 +120,21 @@ public:
             }
         }
         
-        Serial.println("LOAD: OK");
+        Logger::info("LOAD: OK");
         debug();
         return true;
     }
 
     void debug() {
-        Serial.println(_hostname);
-        Serial.println(_ssid);
-        Serial.printf("CHAN: %d\n", _channel);
+        Logger::info(_hostname.c_str());
+        Logger::info(_ssid.c_str());
+        Logger::info("CHAN: %d\n", _channel);
     }
 
     bool save_wifi() {
         if (!LittleFS.begin()) {
              // TODO: error mgmt
-            Serial.println(F("WIFI: LFS ERR"));
+            Logger::error("WIFI: LFS ERR");
             return false;
         }
 
@@ -147,26 +146,25 @@ public:
         File f = LittleFS.open(WIFI_CONFIG_FILE, "w");
         if (!f) {
             // TODO: error mgmt
-            Serial.println(F("WIFI: LFS OPEN ERR"));
+            Logger::error("WIFI: LFS OPEN ERR");
             return false;
         }
         serializeJson(doc, f);
         f.close();
-        Serial.println("WIFI: OK");
+        Logger::info("WIFI: OK");
         debug();
         return true;
     }
         
     bool save_leds(String& raw_json) {
         bool ret = false;
-        String file = LEDS_CONFIG_FILE;
-        Serial.print(file);
-        File f = LittleFS.open(file, "w");
+        // String file = LEDS_CONFIG_FILE;
+        // Logger::verbose(file.c_str());
+        File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
         if (f) {
             f.print(raw_json);
             f.close();
-            Serial.println(raw_json);
-            Serial.println("LEDS SAVED");
+            Logger::info("LEDS SAVED");
             ret = true;
         }
         return ret;

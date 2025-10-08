@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 
 #include "index.html.h"
 #include "led_device.h"
@@ -30,7 +28,7 @@ public:
         _server.on("/save", HTTP_POST, [&]() {
             if (!_server.hasArg("plain")) {
                 _server.send(400, "text/plain", "No body");
-                Serial.println("save NO BODY");
+                Logger::error("save NO BODY");
                 return;
             }
 
@@ -76,7 +74,7 @@ public:
         _server.on("/test", HTTP_POST, [&]() {
             if (!_server.hasArg("plain")) {
                 _server.send(400, "text/plain", "No body");
-                Serial.println("test NO BODY");
+                Logger::error("test NO BODY");
                 return;
             }
             String body = _server.arg("plain");

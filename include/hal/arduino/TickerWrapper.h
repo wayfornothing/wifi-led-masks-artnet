@@ -5,24 +5,50 @@
 
 class TickerWrapper {
 public:
-    TickerWrapper();
-    ~TickerWrapper();
+    TickerWrapper() {
+    }
 
-    // Attache une fonction sans argument
-    void attach_ms(uint32_t intervalMs, void (*callback)(void));
+    ~TickerWrapper() {
+        detach();
+    }
 
-    // Attache une fonction avec argument (template)
+    void attach_ms(uint32_t intervalMs, void (*callback)(void)) {
+        _interval = intervalMs;
+        _ticker.attach_ms(intervalMs, callback);
+        _active = true;
+    }
+
+    // Instanciation explicite des templates pour quelques types courants
+    // template void attach_ms<int>(uint32_t, void (*)(int), int);
+    // template void attach_ms<void*>(uint32_t, void (*)(void*), void*);
+
     template <typename T>
-    void attach_ms(uint32_t intervalMs, void (*callback)(T), T arg);
+    void attach_ms(uint32_t intervalMs, void (*callback)(T), T arg) {
+        _interval = intervalMs;
+        _ticker.attach_ms(intervalMs, callback, arg);
+        _active = true;
+    }
+    
+    void detach() {
+        _ticker.detach();
+        _active = false;
+    }
 
-    // Détache le ticker
-    void detach();
+    void restart() {
+        if (_active && _interval > 0) {
+            // On redétache, puis réattache la même fonction
+            // ⚠️ Ticker ne stocke pas le callback accessible directement,
+            // donc il faut normalement réattacher manuellement (selon ton design).
+            // Ici, on ne peut pas le faire sans callback sauvegardé.
+            _ticker.detach();
+            _active = false;
+            // (Facultatif : tu peux étendre la classe pour mémoriser le callback)
+        }
+    }
 
-    // Redémarre le ticker avec le même intervalle
-    void restart();
-
-    // Vérifie si le ticker est actif
-    bool isActive() const;
+    bool isActive() const {
+        return _active;
+    }
 
 private:
     Ticker _ticker;

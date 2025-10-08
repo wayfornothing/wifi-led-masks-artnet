@@ -1,8 +1,5 @@
 #pragma once
 
-// #include <Arduino.h>
-#include <DNSServer.h>
-#include <ESP8266WiFi.h>
 #include <functional>
 
 #include "hal/hal.h"
@@ -80,7 +77,7 @@ public:
         LEDDevice led(_pin_ui, "D4");
         
         DeviceConfig& cfg = DeviceConfig::instance();
-        Serial.printf("Connecting to %s...", cfg.get_SSID().c_str());
+        Logger::info("Connecting to %s...", cfg.get_SSID().c_str());
         
         WiFi.mode(WIFI_STA);
         WiFi.begin(cfg.get_SSID(), cfg.get_password());
@@ -88,9 +85,9 @@ public:
         unsigned long start = millis();
         bool enable = true;
         while (WiFi.status() != WL_CONNECTED && millis() - start < _timeout_ms) {
-            pin_digital_write(_pin_ui, !pin_digital_read(_pin_ui));
+            pin_write_digital(_pin_ui, !pin_read_digital(_pin_ui));
             led.enable(enable);
-            Serial.print(".");
+            Logger::info(".");
             delay_ms(200);
             enable = !enable;
         }
@@ -98,11 +95,11 @@ public:
         led.enable(false);
         wl_status_t status = WiFi.status();
         if (status == WL_CONNECTED) {
-            Serial.printf("\nConnected with IP: %s\n", WiFi.localIP().toString().c_str());
+            Logger::info("\nConnected with IP: %s\n", WiFi.localIP().toString().c_str());
             _connected = true;
             _on_connect();
         } else {
-            Serial.printf("\nConnection failed: %d\n", status);
+            Logger::error("\nConnection failed: %d\n", status);
             _connected = false;
         }
     }
@@ -113,7 +110,7 @@ public:
             if (WiFi.status() == WL_CONNECTED) {
                 if (_connected == false) {
                     // network restored, trigger callback just once
-                    Serial.println("Connection restored !!\n");
+                    Logger::info("Connection restored !!\n");
                     _attempts = 0;
                     _on_connect();
                 }
@@ -123,7 +120,7 @@ public:
                 if (_connected) {
                     // was connected but lost connection, trigger callback just once
                     _connected = false;
-                    Serial.println("Connection lost !!\n");
+                    Logger::warn("Connection lost !!\n");
                     if (_on_disconnect) {
                         _on_disconnect();
                     }
@@ -135,13 +132,13 @@ public:
                     if (now - _last_attempt_ts >= _retry_interval_ms) {
                         _attempts++;
                         _last_attempt_ts = now;
-                        Serial.println("Retrying to connect.\n");
+                        Logger::info("Retrying to connect.\n");
                         connect();
                     }
                 }
                 else {
                     // max attempts reached, don't try to reconnect until reset
-                    Serial.println("Max attempts reached, disabled WiFi manager.\n");
+                    Logger::error("Max attempts reached, disabled WiFi manager.\n");
                     if (_on_connect_failed ) {
                         _on_connect_failed();
                     }
