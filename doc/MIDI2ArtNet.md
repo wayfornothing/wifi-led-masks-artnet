@@ -23,5 +23,5 @@ python -m venv venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 venv\Scripts\Activate.ps1
 pip install mido python-rtmidi
-python .\scripts\midi2artnet.py --broadcast 192.168.1.255
+python .\scripts\midi2artnet.py --broadcast 192.168.137.255
 ```

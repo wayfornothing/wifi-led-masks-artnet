@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-
+#include "hal/hal.h"
 #include "index.html.h"
 #include "led_device.h"
 #include "device_config.h"
 
 class ConfigWebServer {
+private:
+    WebServer _server;
+
 public:
     ConfigWebServer()
         : _server(80) {
@@ -30,7 +30,7 @@ public:
         _server.on("/save", HTTP_POST, [&]() {
             if (!_server.hasArg("plain")) {
                 _server.send(400, "text/plain", "No body");
-                Serial.println("save NO BODY");
+                Logger::error("save NO BODY");
                 return;
             }
 
@@ -76,7 +76,7 @@ public:
         _server.on("/test", HTTP_POST, [&]() {
             if (!_server.hasArg("plain")) {
                 _server.send(400, "text/plain", "No body");
-                Serial.println("test NO BODY");
+                Logger::error("test NO BODY");
                 return;
             }
             String body = _server.arg("plain");
@@ -84,7 +84,7 @@ public:
             deserializeJson(doc, body);
             String mode = doc["mode"].as<String>();
             String pin_name = doc["pin"].as<String>();
-            int pin = DeviceConfig::pin_from_string(pin_name);
+            int pin = pin_from_string(pin_name);
 
             if (mode == "enable") {
                 static int en = 1;
@@ -99,7 +99,6 @@ public:
             else if (mode == "random") {
                 LEDDevice led(pin, "test");
                 led.random(DEFAULT_RANDOM_INTERVAL_MS);
-            // // analogWrite(pin, random(0, 1024));
             } else if (mode == "fade") {
                 LEDDevice led(pin, "test");
                 led.fade_in(DEFAULT_FADE_INTERVAL_MS);
@@ -109,7 +108,4 @@ public:
 
         _server.begin();
     }
-
-private:
-    ESP8266WebServer _server;
 };

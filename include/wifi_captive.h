@@ -1,12 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <DNSServer.h>
-#include <LittleFS.h>
-#include <ArduinoJson.h>
-
+#include "hal/hal.h"
 #include "device_config.h"
 #include "captive.html.h"
 
@@ -20,7 +14,7 @@ class WiFiCaptivePortal {
         LEDDevice led(LED_BUILTIN, "");
         led.blink(DEFAULT_BLINK_INTERVAL_MS);
 
-        ESP8266WebServer server(80);
+        WebServer server(80);
         DNSServer dns;
         WiFi.mode(WIFI_AP);
         WiFi.softAP(AP_NAME);
@@ -48,13 +42,13 @@ class WiFiCaptivePortal {
             cfg.save_wifi();
 
             server.send(200, "text/html", "<html><body><h1>Saved. Rebooting...</h1></body></html>");
-            delay(1000);
-            ESP.restart();
+            delay_ms(1000);
+            reboot();
 
         });
         server.begin();
 
-        Serial.printf("Captive portal started at %s\nConnect to SSID: %s\n", WiFi.softAPIP().toString().c_str(), AP_NAME);
+        Logger::info("Captive portal started at %s\nConnect to SSID: %s\n", WiFi.softAPIP().toString().c_str(), AP_NAME);
 
         // blocking on purpose
         while (1) {

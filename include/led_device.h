@@ -1,19 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
-#include <Ticker.h>
-
+#include "hal/hal.h"
 #include "utils.h"
 
-// typedef enum {
-//     LED_STATUS_IDLE,
-//     LED_STATUS_BLINK,
-//     LED_STATUS_FADING,
-//     LED_STATUS_FADE_OUT,
-//     LED_STATUS_RANDOM
-// } eLEDStatus;   
-
-// TODO: config thru web, this depends on LED type
 #define FADE_MIN (0)
 #define FADE_MAX (0xff)
 
@@ -47,8 +36,8 @@ public:
         _selected(false) {
         set_random_midpoint(random_midpoint_percent);
         set_heartbeat_max(heartbeat_max);
-        pinMode(_pin, OUTPUT);
-        Serial.printf("Created LED %s at pin %d\n", name.c_str(), pin);
+        pin_set_output(_pin);
+        Logger::info("Created LED %s at pin %d\n", name.c_str(), pin);
     }
 
     void select(bool select) {
@@ -62,7 +51,7 @@ public:
     void blink(uint8_t interval_ms) {
         interval_ms = interval_ms;
         interval_ms = _clamp((int)interval_ms, MIN_BLINK_INTERVAL_MS, MAX_BLINK_INTERVAL_MS);
-        Serial.printf("BLINK %s %dms\n", name.c_str(), interval_ms);
+        Logger::info("BLINK %s %dms\n", name.c_str(), interval_ms);
         _ticker.detach();
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_toggle();
@@ -71,10 +60,9 @@ public:
 
 
     void random(uint8_t interval_ms) {
-        Serial.println(_pin);
         interval_ms = interval_ms;
         interval_ms = _clamp((int)interval_ms, MIN_RANDOM_INTERVAL_MS, MAX_RANDOM_INTERVAL_MS);
-        Serial.printf("RANDOM %s %dms\n", name.c_str(), interval_ms);
+        Logger::info("RANDOM %s %dms\n", name.c_str(), interval_ms);
         _ticker.detach();
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_randomize();
@@ -86,7 +74,7 @@ public:
         enable(false);
         _fade_idx = FADE_MIN;
         _heartbeat_delta = 1;
-        Serial.printf("HBEAT %s %dms\n", name.c_str(), interval_ms);
+        Logger::info("HBEAT %s %dms\n", name.c_str(), interval_ms);
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_heartbeat(true);
         }, this);
@@ -97,7 +85,7 @@ public:
         enable(false);
         _fade_idx = FADE_MIN;
         _heartbeat_delta = 1;
-        Serial.printf("PULSE %s %dms\n", name.c_str(), interval_ms);
+        Logger::info("PULSE %s %dms\n", name.c_str(), interval_ms);
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_heartbeat(false);
         }, this);
@@ -108,7 +96,7 @@ public:
         enable(false);
         _fade_idx = FADE_MIN;
         // interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-        // Serial.printf("FADE IN %s %dms\n", name.c_str(), interval_ms);
+        // Logger::info("FADE IN %s %dms\n", name.c_str(), interval_ms);
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_fade_in();
         }, this);
@@ -118,7 +106,7 @@ public:
         enable(true);
         _fade_idx = FADE_MAX;
         interval_ms = _clamp((int)interval_ms, MIN_FADE_INTERVAL_MS, MAX_FADE_INTERVAL_MS);
-        // Serial.printf("FADE OUT %s %dms\n", name.c_str(), interval_ms);        
+        // Logger::info("FADE OUT %s %dms\n", name.c_str(), interval_ms);        
         _ticker.attach_ms(interval_ms, +[] (LEDDevice* self) {
             self->_fade_out();
         }, this);
@@ -126,36 +114,36 @@ public:
 
     void enable(bool enabled) {
         _ticker.detach();
-        // Serial.printf("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
-        digitalWrite(_pin, enabled ? HIGH : LOW);
+        // Logger::info("ENABLE %s %s\n", name.c_str(), enabled ? "ON" : "OFF");
+        pin_digital_write(_pin, enabled ? HIGH : LOW);
     }
 
     void dim(uint8_t value) {
         _ticker.detach();
         value *= 2;
         int analog_value = _dim_tab[value];
-        Serial.printf("DIM %s %d an %d\n", name.c_str(), value, analog_value);
-        analogWrite(_pin, analog_value);
+        Logger::info("DIM %s %d an %d\n", name.c_str(), value, analog_value);
+        pin_analog_write(_pin, analog_value);
     }
 
     void set_random_midpoint(uint8_t percent) {
         _random_midpoint = RAND_MAX / (100.0 / _clamp((int)percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
-        Serial.printf("RMID: %d%%\n", percent);
+        Logger::info("RMID: %d%%\n", percent);
     }
 
     void set_heartbeat_max(uint8_t max) {
         _heartbeat_max = _clamp((int)max, FADE_MIN, FADE_MAX);
-        Serial.printf("HMAX: %d\n", _heartbeat_max);
+        Logger::info("HMAX: %d\n", _heartbeat_max);
     }
 
 private:
-    uint8_t     _pin;
-    bool        _selected;
-    int         _random_midpoint;
-    int         _heartbeat_max;
-    int         _heartbeat_delta = 1;
-    Ticker      _ticker;
-    int         _fade_idx = FADE_MIN;
+    uint8_t         _pin;
+    bool            _selected;
+    int             _random_midpoint;
+    int             _heartbeat_max;
+    int             _heartbeat_delta = 1;
+    TickerWrapper   _ticker;
+    int             _fade_idx = FADE_MIN;
     static constexpr uint8_t _dim_tab[256] = {
         0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
         0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -173,16 +161,16 @@ private:
     };
 
     void _toggle() {
-        digitalWrite(_pin, !digitalRead(_pin));
+        pin_digital_write(_pin, !pin_digital_read(_pin));
     }
 
     void _randomize() {
         bool enabled = rand() > _random_midpoint;
-        digitalWrite(_pin, enabled ? LOW : HIGH);
+        pin_digital_write(_pin, enabled ? LOW : HIGH);
     }
 
     void _fade_in() {
-        analogWrite(_pin, _dim_tab[_fade_idx++]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx++]);
         if (_fade_idx == FADE_MAX) {
             // fade finished
             _fade_idx = FADE_MIN;
@@ -191,7 +179,7 @@ private:
     }
     
     void _fade_out() {
-        analogWrite(_pin, _dim_tab[_fade_idx--]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx--]);
         if (_fade_idx == FADE_MIN) {
             // fade finished
             _fade_idx = FADE_MAX;
@@ -201,7 +189,7 @@ private:
 
     void _heartbeat(bool repeat) {
         _fade_idx += _heartbeat_delta;
-        analogWrite(_pin, _dim_tab[_fade_idx]);
+        pin_analog_write(_pin, _dim_tab[_fade_idx]);
         if (_fade_idx == _heartbeat_max) {
             // fade in finished
             _heartbeat_delta = -1;

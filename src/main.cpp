@@ -1,23 +1,24 @@
 
-#include "version.h"
-#include "device.h"
+#include "hal/hal.h"
 
+#include "mask_device.h"
+#include "version.h"
 #include "wifi_captive.h"
 
-Device _device;
-#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
+MaskDevice _device;
 
 void setup() {
-    Serial.begin(115200);
-    delay(100);
-
-    Serial.printf("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
-
-    pinMode(PIN_RESET_BUTTON, INPUT);
-    delay(100);
-    if (digitalRead(PIN_RESET_BUTTON) == LOW) {
+    
+    Logger::begin_hw();
+    delay_ms(100);
+    
+    Logger::info("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
+    
+    config_reset_button();
+    delay_ms(100);
+    if (is_reset_button_pressed()) {
         // start captive portal
-        Serial.println("Force config portal");
+        Logger::info("Force config portal");
         WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot
     }
 
