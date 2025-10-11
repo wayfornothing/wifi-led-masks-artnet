@@ -34,6 +34,14 @@ void delay_ms(unsigned long ms) {
     delay(ms);
 }
 
+bool fs_exists(const char* path) {
+    return LittleFS.exists(path);
+}
+
+File fs_open(const char* path, const char* mode) {
+    return LittleFS.open(path, mode);
+}
+
 #endif
 
 
@@ -98,6 +106,12 @@ void config_reset_button() {
 bool is_reset_button_pressed() {
     return pin_digital_read(PIN_RESET_BUTTON) == LOW;
 }
+
+bool fs_begin() {
+    return LittleFS.begin();
+}
+
+
 #endif
 
 
@@ -159,5 +173,9 @@ void config_reset_button() {
 
 bool is_reset_button_pressed() {
     return pin_digital_read(PIN_RESET_BUTTON) == HIGH;
+}
+
+bool fs_begin() {
+    return LittleFS.begin(true);
 }
 #endif

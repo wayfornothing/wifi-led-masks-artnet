@@ -9,8 +9,8 @@
 class DeviceConfig {
 private:
 
-    const String WIFI_CONFIG_FILE = "/wifi.json";
-    const String LEDS_CONFIG_FILE = "/leds.json";
+    const char* WIFI_CONFIG_FILE = "/wifi.json";
+    const char* LEDS_CONFIG_FILE = "/leds.json";
 
     // Singleton
     DeviceConfig() : _channel(1) {
@@ -34,22 +34,22 @@ public:
     }
 
     bool load() {
-        if (!LittleFS.begin(true)) {
+        if (!fs_begin()) {
             // TODO: error mgmt
             Logger::error("WIFI/LEDS: LFS ERR");
             // TODO: error mgmt
             // return false;
-            Logger::error("LittleFS failed to mount after format!");
+            Logger::error("File system failed to mount after format!");
             while (true) delay(1000);
         }
 
         // WIFI
-        if (!LittleFS.exists(WIFI_CONFIG_FILE)) {
+        if (!fs_exists(WIFI_CONFIG_FILE)) {
             // TODO: error mgmt
             Logger::error("WIFI: CFG ERR");
             return false;
         }
-        File wifi_file = LittleFS.open(WIFI_CONFIG_FILE, "r");
+        File wifi_file = fs_open(WIFI_CONFIG_FILE, "r");
         if (!wifi_file) {
             // TODO: error mgmt
             Logger::error("WIFI: OPEN ERR");
@@ -69,9 +69,9 @@ public:
         _pass     = wifi_json["pass"]     | "";
 
         // LEDS
-        if (!LittleFS.exists(LEDS_CONFIG_FILE)) {
+        if (!fs_exists(LEDS_CONFIG_FILE)) {
             Logger::warn("LEDS: no config, creating default...");
-            File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "w");
+            File leds_file = fs_open(LEDS_CONFIG_FILE, "w");
             if (leds_file) {
                 leds_file.print("{}"); // empty json
                 leds_file.close();
@@ -82,7 +82,7 @@ public:
                 return false;
             }
         }
-        File leds_file = LittleFS.open(LEDS_CONFIG_FILE, "r");
+        File leds_file = fs_open(LEDS_CONFIG_FILE, "r");
         if (!leds_file) {
             // TODO: error mgmt
             Logger::error("LEDS: OPEN ERR");
@@ -126,7 +126,7 @@ public:
     }
 
     bool save_wifi() {
-        if (!LittleFS.begin()) {
+        if (!fs_begin()) {
              // TODO: error mgmt
             Logger::error("WIFI: LFS ERR");
             return false;
@@ -137,7 +137,7 @@ public:
         doc["ssid"]     = _ssid;
         doc["pass"]     = _pass;
 
-        File f = LittleFS.open(WIFI_CONFIG_FILE, "w");
+        File f = fs_open(WIFI_CONFIG_FILE, "w");
         if (!f) {
             // TODO: error mgmt
             Logger::error("WIFI: LFS OPEN ERR");
@@ -154,7 +154,7 @@ public:
         bool ret = false;
         // String file = LEDS_CONFIG_FILE;
         // Logger::verbose(file.c_str());
-        File f = LittleFS.open(LEDS_CONFIG_FILE, "w");
+        File f = fs_open(LEDS_CONFIG_FILE, "w");
         if (f) {
             f.print(raw_json);
             f.close();
