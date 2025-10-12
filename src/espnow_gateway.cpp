@@ -6,7 +6,7 @@
 
 #include "version.h"
 #include "espnow/gateway_device.h"
-#include "espnow/gateway_captive.h"
+// #include "espnow/gateway_captive.h"
 
 GatewayDevice _device;
 
@@ -17,13 +17,13 @@ void setup() {
     
     Logger::info("\nWFN-Device v%s - %s - %s\n", GIT_TAG, GIT_BRANCH, GIT_HASH);
     
-    config_reset_button();
-    delay_ms(100);
-    if (is_reset_button_pressed()) {
-        // start captive portal
-        Logger::info("Force config portal");
-        WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot
-    }
+    // config_reset_button();
+    // delay_ms(100);
+    // if (true || is_reset_button_pressed()) {
+    //     // start captive portal
+    //     Logger::info("Force config portal");
+    //     WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot
+    // }
 
     _device.begin();
 }

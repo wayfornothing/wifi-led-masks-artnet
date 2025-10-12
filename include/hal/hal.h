@@ -120,6 +120,7 @@ bool fs_begin() {
 
 #ifdef ESP32
 
+#include <U8g2lib.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
@@ -128,6 +129,8 @@ bool fs_begin() {
 #include <ArtnetWifi.h>
 #include <ESPmDNS.h>
 #include <esp_now.h>
+// #include <ESPAsyncWebServer.h>
+
 
 void reboot() {
     ESP.restart();
@@ -170,7 +173,7 @@ uint8_t pin_from_string(const String& pin_name) {
 void dns_update() {
 }
 
-#define PIN_RESET_BUTTON (2) // add a 10k resistor from D0 to 3v3R
+#define PIN_RESET_BUTTON (0)
 void config_reset_button() {
     pin_set_input(PIN_RESET_BUTTON);
 }
@@ -181,5 +184,27 @@ bool is_reset_button_pressed() {
 
 bool fs_begin() {
     return LittleFS.begin(true);
+}
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
+
+void display_init() {
+    u8g2.begin();
+    u8g2.setContrast(255);    // set contrast to maximum
+    u8g2.setBusClock(400000); // 400kHz I2C
+    u8g2.setFont(u8g2_font_ncenB10_tr);
+    u8g2.clearBuffer();
+
+}
+
+
+void display_print_str(const char* str, int x, int y) {
+    static const int xOffset = 30; // = (132-w)/2
+    static const int yOffset = 12; // = (64-h)/2
+
+    u8g2.clearBuffer(); // clear the internal memory
+    u8g2.setCursor(xOffset + x, yOffset + y);
+    u8g2.printf(str);
+    u8g2.sendBuffer(); // transfer internal memory to the display
 }
 #endif

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "hal/hal.h"
-#include "device_config.h"
+#include "espnow/client_config.h"
 #include "client.html.h"
 
 class WiFiCaptivePortal {
