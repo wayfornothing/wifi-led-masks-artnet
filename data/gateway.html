@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ESP32 Gateway</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #fafafa;
+            margin: 0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+
+        li {
+            background: #f0f0f0;
+            border-radius: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            font-family: monospace;
+            margin-bottom: 0.3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:active {
+            background: #005fcc;
+        }
+
+        .row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Gateway Registered Clients</h1>
+        <ul id="list"></ul>
+        <div class="row">
+            <input id="newmac" placeholder="AA:BB:CC:DD:EE:FF">
+            <button id="addBtn">Add</button>
+        </div>
+    </div>
+
+    <script>
+        async function refreshList() {
+            try {
+                const res = await fetch('/list');
+                const clients = await res.json();
+                const ul = document.getElementById('list');
+                ul.innerHTML = '';
+                if (clients.length === 0) {
+                    ul.innerHTML = '<li>No registered clients</li>';
+                } else {
+                    clients.forEach(mac => {
+                        const li = document.createElement('li');
+                        li.textContent = mac;
+                        ul.appendChild(li);
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        document.getElementById('addBtn').onclick = async () => {
+            const mac = document.getElementById('newmac').value.trim();
+            if (!mac) return alert("Enter a MAC address");
+            await fetch(`/register?mac=${encodeURIComponent(mac)}`);
+            document.getElementById('newmac').value = '';
+            await refreshList();
+        };
+
+        refreshList();
+    </script>
+</body>
+
+</html>

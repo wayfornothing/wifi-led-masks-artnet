@@ -27,6 +27,8 @@ class WiFiCaptivePortal {
         });
 
         server.on("/", HTTP_GET, [&server]() {
+            String html = CAPTIVE_HTML;
+            html.replace("__MAC_ADDRESS__", WiFi.macAddress());
             server.send(200, "text/html", CAPTIVE_HTML);
         });
         

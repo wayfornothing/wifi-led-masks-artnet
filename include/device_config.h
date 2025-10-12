@@ -11,6 +11,7 @@ private:
 
     const char* WIFI_CONFIG_FILE = "/wifi.json";
     const char* LEDS_CONFIG_FILE = "/leds.json";
+    const char* CONFIG_FILE = "/config.json";
 
     // Singleton
     DeviceConfig() : _channel(1) {
@@ -150,15 +151,13 @@ public:
         return true;
     }
         
-    bool save_leds(String& raw_json) {
+    bool save_config(String& raw_json) {
         bool ret = false;
-        // String file = LEDS_CONFIG_FILE;
-        // Logger::verbose(file.c_str());
-        File f = fs_open(LEDS_CONFIG_FILE, "w");
+        File f = fs_open(CONFIG_FILE, "w");
         if (f) {
             f.print(raw_json);
             f.close();
-            Logger::info("LEDS SAVED");
+            Logger::info("CONFIG SAVED");
             ret = true;
         }
         return ret;

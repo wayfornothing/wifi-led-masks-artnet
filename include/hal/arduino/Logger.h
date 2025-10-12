@@ -14,7 +14,7 @@ enum LogLevel {
 
 class Logger {
 private:
-    static inline HardwareSerial* _serial = nullptr;
+    static inline HWCDC* _serial = nullptr;
     static inline bool _enabled = true;
     static inline LogLevel _currentLevel = LOG_LEVEL_DEBUG;
 

@@ -1,9 +1,9 @@
 
 #include "hal/hal.h"
 
-#include "mask_device.h"
+#include "wifi/client_device.h"
+#include "wifi/wifi_captive.h"
 #include "version.h"
-#include "wifi_captive.h"
 
 MaskDevice _device;
 
