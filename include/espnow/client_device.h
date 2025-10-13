@@ -162,6 +162,8 @@ private:
                 _process_cc(CC_LED_HEARTBEAT, DEFAULT_FADE_INTERVAL_MS);
                 break;
             }
+            // unselect all
+            _process_pc(0);
         }
     }
 
