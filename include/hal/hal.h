@@ -53,6 +53,9 @@ File fs_open(const char* path, const char* mode) {
 #include <ArduinoJson.h>
 #include <ArtnetWifi.h>
 #include <ESP8266mDNS.h>
+#include <espnow.h>
+
+#define ESP_OK (0)
 
 void reboot() {
     ESP.restart();
@@ -92,13 +95,28 @@ uint8_t pin_from_string(const String& pin_name) {
     return PIN_INVALID;
 }
 
+const char* string_from_pin(const uint8_t pin) {
+    if (pin == D0) return "D0";
+    if (pin == D1) return "D1";
+    if (pin == D2) return "D2";
+    if (pin == D3) return "D3";
+    if (pin == D4) return "D4";
+    if (pin == D5) return "D5";
+    if (pin == D6) return "D6";
+    if (pin == D7) return "D7";
+    if (pin == D8) return "D8";
+    if (pin == D9) return "D9";
+    if (pin == D10) return "D10";
+    return "INVALID";
+}
+
 #define WebServer ESP8266WebServer
 
 void dns_update() {
     MDNS.update();
 }
 
-#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
+#define PIN_RESET_BUTTON (D0) // button to GND, button to pin, and add a 10k resistor from pin to 3v3R
 void config_reset_button() {
     pin_set_input(PIN_RESET_BUTTON);
 }
@@ -117,6 +135,7 @@ bool fs_begin() {
 
 #ifdef ESP32
 
+#include <U8g2lib.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
@@ -124,6 +143,9 @@ bool fs_begin() {
 #include <ArduinoJson.h>
 #include <ArtnetWifi.h>
 #include <ESPmDNS.h>
+#include <esp_now.h>
+// #include <ESPAsyncWebServer.h>
+
 
 void reboot() {
     ESP.restart();
@@ -149,15 +171,15 @@ int wifi_get_status() {
 
 #define PIN_INVALID (0xff)
 uint8_t pin_from_string(const String& pin_name) {
-    if (pin_name == "D0") return D0;
-    if (pin_name == "D1") return D1;
-    if (pin_name == "D2") return D2;
-    if (pin_name == "D3") return D3;
-    if (pin_name == "D4") return D4;
-    if (pin_name == "D5") return D5;
-    if (pin_name == "D6") return D6;
-    if (pin_name == "D7") return D7;
-    if (pin_name == "D8") return D8;
+    if (pin_name == "D0") return 0;
+    if (pin_name == "D1") return 1;
+    if (pin_name == "D2") return 2;
+    if (pin_name == "D3") return 3;
+    if (pin_name == "D4") return 4;
+    if (pin_name == "D5") return 5;
+    if (pin_name == "D6") return 6;
+    if (pin_name == "D7") return 7;
+    if (pin_name == "D8") return 8;
     // if (pin_name == "D9") return D9;
     // if (pin_name == "D10") return D10;
     return PIN_INVALID;
@@ -166,7 +188,7 @@ uint8_t pin_from_string(const String& pin_name) {
 void dns_update() {
 }
 
-#define PIN_RESET_BUTTON (D2) // add a 10k resistor from D0 to 3v3R
+#define PIN_RESET_BUTTON (0)
 void config_reset_button() {
     pin_set_input(PIN_RESET_BUTTON);
 }
@@ -177,5 +199,27 @@ bool is_reset_button_pressed() {
 
 bool fs_begin() {
     return LittleFS.begin(true);
+}
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
+
+void display_init() {
+    u8g2.begin();
+    u8g2.setContrast(255);    // set contrast to maximum
+    u8g2.setBusClock(400000); // 400kHz I2C
+    u8g2.setFont(u8g2_font_ncenB10_tr);
+    u8g2.clearBuffer();
+
+}
+
+
+void display_print_str(const char* str, int x, int y) {
+    static const int xOffset = 30; // = (132-w)/2
+    static const int yOffset = 12; // = (64-h)/2
+
+    u8g2.clearBuffer(); // clear the internal memory
+    u8g2.setCursor(xOffset + x, yOffset + y);
+    u8g2.printf(str);
+    u8g2.sendBuffer(); // transfer internal memory to the display
 }
 #endif

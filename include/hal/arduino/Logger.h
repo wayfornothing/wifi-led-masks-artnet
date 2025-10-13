@@ -14,7 +14,11 @@ enum LogLevel {
 
 class Logger {
 private:
+#ifdef ESP8266
     static inline HardwareSerial* _serial = nullptr;
+#elif ESP32
+    static inline HWCDC* _serial = nullptr;
+#endif
     static inline bool _enabled = true;
     static inline LogLevel _currentLevel = LOG_LEVEL_DEBUG;
 

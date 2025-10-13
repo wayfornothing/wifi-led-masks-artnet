@@ -51,6 +51,6 @@ Chaque LED possède 10 fonctions (voir table Codes Control Change), donc pour ch
 Par exemple pour lancer un RANDOM sur la LED n°2:
 
 ```
-Note: (led_index * 10) + code_cc_random = (2 * 10) + 7 ! 27
+Note: (led_index * 10) + code_cc_random = (2 * 10) + 7 = 27
 Velocity: 40 = chaque frame dure 40 millisecondes
 ```

@@ -4,7 +4,7 @@
 #include "device_config.h"
 #include "captive.html.h"
 
-class WiFiCaptivePortal {
+class CaptivePortal {
 
     #define AP_NAME "WFN-Config"
     
@@ -27,6 +27,8 @@ class WiFiCaptivePortal {
         });
 
         server.on("/", HTTP_GET, [&server]() {
+            String html = CAPTIVE_HTML;
+            html.replace("__MAC_ADDRESS__", WiFi.macAddress());
             server.send(200, "text/html", CAPTIVE_HTML);
         });
         

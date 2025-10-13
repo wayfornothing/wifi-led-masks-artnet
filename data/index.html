@@ -156,9 +156,9 @@
   <h2>Device Configuration</h2>
 
   <div class="card">
-    <h3>ArtNet</h3>
+    <h3>MAC Address: __MAC_ADDRESS__</h3>
     <div class="form-grid">
-      <label>Channel
+      <label>MIDI Channel
         <select id="channel">
           ${[...Array(16)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
         </select>
@@ -167,7 +167,7 @@
   </div>
 
   <div class="card">
-    <h3>LEDs</h3>
+    <h3>LED Configuration</h3>
     <div id="leds"></div>
     <button onclick="addLED()">➕ Add LED</button>
   </div>
@@ -285,7 +285,7 @@
         channelSelect.appendChild(opt);
       }
 
-      fetch("/leds.json")
+      fetch("/config.json")
         .then(r => r.json())
         .then(cfg => {
           if (cfg.channel !== undefined) document.getElementById("channel").value = cfg.channel;
@@ -295,7 +295,7 @@
             cfg.leds.forEach(led => addLED(led));
           }
         })
-        .catch(err => console.error("Failed to load /leds.json", err));
+        .catch(err => console.error("Failed to load /config.json", err));
     };
   </script>
 </body>

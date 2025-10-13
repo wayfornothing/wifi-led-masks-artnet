@@ -22,7 +22,6 @@ public:
         // main page
         _server.on("/", HTTP_GET, [&]() {
             _server.send_P(200, "text/html", INDEX_HTML);
-
         });
 
 
@@ -36,7 +35,7 @@ public:
 
             String body = _server.arg("plain");
 
-            DeviceConfig::instance().save_leds(body);
+            DeviceConfig::instance().save_config(body);
 
             _server.send(200, "text/plain", "Saved");
         });
