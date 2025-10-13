@@ -4,7 +4,7 @@
 #include "device_config.h"
 #include "captive.html.h"
 
-class WiFiCaptivePortal {
+class CaptivePortal {
 
     #define AP_NAME "WFN-Config"
     

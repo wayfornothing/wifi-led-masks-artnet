@@ -7,6 +7,9 @@ const uint8_t MIDI_TYPE_CC = 0xB0;
 const uint8_t MIDI_TYPE_NOTE_ON = 0x90;
 const uint8_t MIDI_TYPE_NOTE_OFF = 0x80;
 
+#define MIDI_TYPE(packet)    (packet.type & 0xF0)
+#define MIDI_CHANNEL(packet) (packet.type & 0x0F)
+
 #pragma pack(push, 1)
 typedef struct {
     uint32_t seq;

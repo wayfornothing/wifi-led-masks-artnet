@@ -25,47 +25,50 @@ static uint32_t _lost_seqs;
 class MaskDevice {
 
 private:
-    const uint16_t          _dmx_base = (DeviceConfig::instance().get_channel() - 1) * 3;
     ESPNowManager           _network;
 
     static void _on_data_recv(uint8_t *mac, uint8_t *incoming_data, uint8_t len) {
         midi_packet_t pkt;
         if (len != sizeof(midi_packet_t)) {
-            Logger::error("Wrong size: %d bytes\n", len);
+            Logger::error("Wrong size: %d bytes", len);
             return;
         }
 
         memcpy(&pkt, incoming_data, sizeof(pkt));
 
+        Logger::info("PKT seq=%lu chan=%d type=0x%02X num=%d val=%d (crc nok %d seq nok %d)", pkt.seq, MIDI_CHANNEL(pkt), MIDI_TYPE(pkt), pkt.number, pkt.value, _crc_fails, _lost_seqs);
+
         uint8_t calc = crc8_dallas((uint8_t*)&pkt, sizeof(pkt) - 1);
         if (calc != pkt.crc) {
-            Logger::error("CRC FAIL (got %02X expected %02X)\n", pkt.crc, calc);
+            Logger::error("CRC FAIL (got %02X expected %02X)", pkt.crc, calc);
             _crc_fails++;
         }
         else {
             // Détection de perte
-            if (pkt.seq != _last_seq + 1 && _last_seq != 0) {
-                Logger::warn("⚠️  Missing packets: %lu → %lu\n", _last_seq, pkt.seq);
-                _lost_seqs++;
+            if (MIDI_CHANNEL(pkt) + 1 == DeviceConfig::instance().get_channel()) {
+                if (pkt.seq != _last_seq + 1 && _last_seq != 0) {
+                    Logger::warn("⚠️  Missing packets: %lu → %lu", _last_seq, pkt.seq);
+                    _lost_seqs++;
+                }
+                _last_seq = pkt.seq;
+                // Logger::info("[%d/%d/%lu] type=%02X num=%d val=%d",
+                //             _crc_fails, _lost_seqs, pkt.seq, pkt.type, pkt.number, pkt.value);
+                
+                _process_midi(&pkt);
             }
-            _last_seq = pkt.seq;
-            Logger::info("[%d/%d/%lu] type=%02X num=%d val=%d\n",
-                           _crc_fails, _lost_seqs, pkt.seq, pkt.type, pkt.number, pkt.value);
-            
-            _process_midi(&pkt);
         }
     }
 
     static void _process_midi(midi_packet_t* pkt) {
 
-        switch (pkt->type) {
+        switch (pkt->type & 0xF0) {
             case MIDI_TYPE_PC:
-                Logger::info("PC %d\n", pkt->number);
+                Logger::info("PC %d", pkt->number);
                 _process_pc(pkt->number);
                 break;
 
             case MIDI_TYPE_CC:
-                Logger::info("CC %d val %d\n", pkt->number, pkt->value);
+                Logger::info("CC %d val %d", pkt->number, pkt->value);
                 if (pkt->value > 0) {
                     _process_cc(pkt->number, pkt->value);
                 }
@@ -75,7 +78,7 @@ private:
             case MIDI_TYPE_NOTE_ON: {
                 uint8_t led_idx = pkt->number / CC_LAST;
                 uint8_t cc = pkt->number % CC_LAST;
-                Logger::info("Note%s %d vel %d idx %d cc %d\n", pkt->value == 0 ? "Off" : "On", pkt->number, pkt->value, led_idx, cc);
+                Logger::info("Note%s %d vel %d idx %d cc %d", pkt->value == 0 ? "Off" : "On", pkt->number, pkt->value, led_idx, cc);
                 if (led_idx < _leds.size()) {
                     if (pkt->value > 0) {
                         LEDDevice& led = _leds.at(led_idx);
@@ -87,47 +90,8 @@ private:
             } break;
             default:
                 break;
-    }
-}
-
-public:
-    MaskDevice() : 
-        _network(_on_data_recv) {
-        _last_seq = _crc_fails = _lost_seqs = 0;
-    }
-
-
-    void tick() {
-        _cli();
-    }
-
-
-    void begin() {
-        DeviceConfig &_config = DeviceConfig::instance();
-
-        // at startup, turn all leds OFF
-        for (auto &led : _config.get_leds()) {
-            Logger::info("Will create LED %s\n", led.name.c_str());
-            _leds.push_back(led);
-        }
-
-        if (_network.begin() == false) {
-            Logger::info("Turn ON all LEDs");
-            for (LEDDevice &led : _leds)
-            {
-                led.enable(true);
-            }
-        }
-        else {
-            Logger::info("ESP-Now connected!");
-            // network restored, turn all the pins OFF
-            for (auto& led : _leds) {
-                led.enable(false);
-            }
         }
     }
-
-private:
 
     static void _process_pc(uint8_t pc) {
         // Program Change selects LED indexes for future configuration
@@ -173,9 +137,13 @@ private:
             case 'e':
                 _process_cc(CC_LED_OFF, 1);
                 break;
+            case 'E':
+                _process_cc(CC_LED_DIM, 127);
+                break;
             case 'B':
                 _process_cc(CC_LED_BLINK, DEFAULT_BLINK_INTERVAL_MS);
                 break;
+            case 'r':
             case 'R':
                 _process_cc(CC_LED_RANDOM, DEFAULT_RANDOM_INTERVAL_MS);
                 break;
@@ -193,6 +161,44 @@ private:
             case 'h':
                 _process_cc(CC_LED_HEARTBEAT, DEFAULT_FADE_INTERVAL_MS);
                 break;
+            }
+        }
+    }
+
+public:
+    MaskDevice() : 
+        _network(_on_data_recv) {
+        _last_seq = _crc_fails = _lost_seqs = 0;
+    }
+
+
+    void tick() {
+        _cli();
+    }
+
+
+    void begin() {
+        DeviceConfig &_config = DeviceConfig::instance();
+
+        // at startup, turn all leds OFF
+
+        Logger::info("MIDI Channel: %d", _config.get_channel());
+        for (auto &led : _config.get_leds()) {
+            Logger::info("Will create LED %s", led.name.c_str());
+            _leds.push_back(led);
+        }
+
+        if (_network.begin() == false) {
+            Logger::info("Turn ON all LEDs");
+            for (LEDDevice &led : _leds) {
+                led.enable(true);
+            }
+        }
+        else {
+            Logger::info("ESP-Now connected!");
+            // network restored, turn all the pins OFF
+            for (auto& led : _leds) {
+                led.enable(false);
             }
         }
     }

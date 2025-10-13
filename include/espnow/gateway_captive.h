@@ -9,7 +9,7 @@
 
 // std::vector<String> _macs;
 
-class WiFiCaptivePortal {
+class CaptivePortal {
 
 #define AP_NAME "WFN-Config"
 

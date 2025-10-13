@@ -19,7 +19,7 @@ void setup() {
     if (is_reset_button_pressed()) {
         // start captive portal
         Logger::info("Force config portal");
-        WiFiCaptivePortal::start_captive_portal(); // this is blocking until reboot
+        CaptivePortal::start_captive_portal(); // this is blocking until reboot
     }
 
     _device.begin();

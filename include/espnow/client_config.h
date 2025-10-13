@@ -8,9 +8,6 @@
 
 class DeviceConfig {
 private:
-
-    const char* CONFIG_FILE = "/config.json";
-
     // Singleton
     DeviceConfig() : _channel(1) {
         load();
@@ -20,10 +17,11 @@ private:
 
     // Configuration fields
     String _hostname;
-    uint16_t _channel;
+    uint8_t _channel;
     std::vector<LEDDevice> _leds;
 
 public:
+    static constexpr const char* CONFIG_FILE = "/config.json";
     static DeviceConfig& instance() {
         static DeviceConfig _instance;
         return _instance;
@@ -32,7 +30,7 @@ public:
     bool load() {
         if (!fs_begin()) {
             // TODO: error mgmt
-            Logger::error("WIFI/LEDS: LFS ERR");
+            Logger::error("CONFIG: LFS ERR");
             // TODO: error mgmt
             // return false;
             Logger::error("File system failed to mount after format!");
@@ -86,14 +84,8 @@ public:
         }
         
         Logger::info("LOAD: OK");
-        debug();
         return true;
     }
-
-    void debug() {
-        Logger::info("CHAN: %d\n", _channel);
-    }
-
         
     bool save_config(String& raw_json) {
         bool ret = false;
@@ -112,8 +104,8 @@ public:
     const String& get_hostname() const { return _hostname; }
     void set_hostname(const String& h) { _hostname = h; }
 
-    uint16_t get_channel() const { return _channel; }
-    void set_channel(uint16_t c) { _channel = c; }
+    uint8_t get_channel() const { return _channel; }
+    void set_channel(uint8_t c) { _channel = c; }
 
     std::vector<LEDDevice>& get_leds() { return _leds; }
 };
