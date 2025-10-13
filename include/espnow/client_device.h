@@ -36,7 +36,7 @@ private:
 
         memcpy(&pkt, incoming_data, sizeof(pkt));
 
-        Logger::info("PKT seq=%lu chan=%d type=0x%02X num=%d val=%d (crc nok %d seq nok %d)", pkt.seq, MIDI_CHANNEL(pkt), MIDI_TYPE(pkt), pkt.number, pkt.value, _crc_fails, _lost_seqs);
+        // Logger::info("PKT seq=%lu chan=%d type=0x%02X num=%d val=%d (crc nok %d seq nok %d)", pkt.seq, MIDI_CHANNEL(pkt), MIDI_TYPE(pkt), pkt.number, pkt.value, _crc_fails, _lost_seqs);
 
         uint8_t calc = crc8_dallas((uint8_t*)&pkt, sizeof(pkt) - 1);
         if (calc != pkt.crc) {
@@ -74,11 +74,11 @@ private:
                 }
                 break;
 
-            case MIDI_TYPE_NOTE_OFF:
+            // case MIDI_TYPE_NOTE_OFF:
             case MIDI_TYPE_NOTE_ON: {
                 uint8_t led_idx = pkt->number / CC_LAST;
                 uint8_t cc = pkt->number % CC_LAST;
-                Logger::info("Note%s %d vel %d idx %d cc %d", pkt->value == 0 ? "Off" : "On", pkt->number, pkt->value, led_idx, cc);
+                Logger::info("[%lu] Note%s %d vel %d idx %d cc %d", pkt->seq, pkt->value == 0 ? "Off" : "On", pkt->number, pkt->value, led_idx, cc);
                 if (led_idx < _leds.size()) {
                     if (pkt->value > 0) {
                         LEDDevice& led = _leds.at(led_idx);

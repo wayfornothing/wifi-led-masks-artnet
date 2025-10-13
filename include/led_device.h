@@ -37,10 +37,11 @@ public:
         set_random_midpoint(random_midpoint_percent);
         set_heartbeat_max(heartbeat_max);
         pin_set_output(_pin);
-        Logger::info("Created LED %s at pin %d", name.c_str(), pin);
+        Logger::info("Created LED '%s' at pin '%s' (%d)", name.c_str(), string_from_pin(pin), pin);
     }
 
     void select(bool select) {
+        // Logger::info("%sSELECT LED '%s' at pin '%s'", select ? "" : "UN", name.c_str(), string_from_pin(_pin));
         _selected = select;
     }
 

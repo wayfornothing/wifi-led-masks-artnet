@@ -16,8 +16,7 @@ void setup() {
     
     WiFi.mode(WIFI_STA);
     Logger::info("MAC:%s ", WiFi.macAddress());
-
-
+    
     config_reset_button();
     delay_ms(100);
     if (is_reset_button_pressed()) {

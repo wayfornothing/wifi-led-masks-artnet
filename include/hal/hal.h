@@ -95,13 +95,28 @@ uint8_t pin_from_string(const String& pin_name) {
     return PIN_INVALID;
 }
 
+const char* string_from_pin(const uint8_t pin) {
+    if (pin == D0) return "D0";
+    if (pin == D1) return "D1";
+    if (pin == D2) return "D2";
+    if (pin == D3) return "D3";
+    if (pin == D4) return "D4";
+    if (pin == D5) return "D5";
+    if (pin == D6) return "D6";
+    if (pin == D7) return "D7";
+    if (pin == D8) return "D8";
+    if (pin == D9) return "D9";
+    if (pin == D10) return "D10";
+    return "INVALID";
+}
+
 #define WebServer ESP8266WebServer
 
 void dns_update() {
     MDNS.update();
 }
 
-#define PIN_RESET_BUTTON (D0) // add a 10k resistor from D0 to 3v3R
+#define PIN_RESET_BUTTON (D0) // button to GND, button to pin, and add a 10k resistor from pin to 3v3R
 void config_reset_button() {
     pin_set_input(PIN_RESET_BUTTON);
 }

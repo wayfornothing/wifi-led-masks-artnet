@@ -65,7 +65,7 @@ def main():
             else:
                 continue
 
-            try:
+            try: 
                 ser.write(pkt)
             except serial.SerialException as e:
                 print(f"[ERROR] Serial write failed: {e}")
