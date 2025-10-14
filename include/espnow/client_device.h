@@ -47,7 +47,7 @@ private:
             // Détection de perte
             if (MIDI_CHANNEL(pkt) + 1 == DeviceConfig::instance().get_channel()) {
                 if (pkt.seq != _last_seq + 1 && _last_seq != 0) {
-                    Logger::warn("⚠️  Missing packets: %lu → %lu", _last_seq, pkt.seq);
+                    Logger::warn("Missing packets: %lu → %lu", _last_seq, pkt.seq);
                     _lost_seqs++;
                 }
                 _last_seq = pkt.seq;

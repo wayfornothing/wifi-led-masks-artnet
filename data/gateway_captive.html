@@ -2,122 +2,239 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ESP32 Gateway</title>
-    <style>
-        body {
-            font-family: system-ui, sans-serif;
-            background: #fafafa;
-            margin: 0;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client Configuration</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card-bg: #ffffff;
+      --accent: #0077cc;
+      --danger: #cc0000;
+      --border: #ddd;
+      --radius: 10px;
+    }
 
-        .card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            max-width: 420px;
-            width: 100%;
-        }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+      padding: 1rem;
+    }
 
-        h1 {
-            text-align: center;
-            font-size: 1.3rem;
-        }
+    h2,
+    h3 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
 
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0.5rem 0;
-        }
+    .card {
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
 
-        li {
-            background: #f0f0f0;
-            border-radius: 0.4rem;
-            padding: 0.4rem 0.6rem;
-            font-family: monospace;
-            margin-bottom: 0.3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
 
-        input {
-            width: 100%;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
 
-        button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.6rem 1rem;
-            font-size: 1rem;
-            cursor: pointer;
-        }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-        button:active {
-            background: #005fcc;
-        }
+    button:hover {
+      background: #005fa3;
+    }
 
-        .row {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-    </style>
+    .btn-danger {
+      background: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: #990000;
+    }
+
+    .client-block {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+
+    .toggle-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    .toggle-btn:hover {
+      background: #005fa3;
+    }
+
+    .client-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0.25rem 0;
+    }
+
+    .client-title {
+      flex-grow: 1;
+    }
+
+    .client-content {
+      display: none;
+    }
+
+    .client-block.expanded .client-content {
+      display: block;
+    }
+
+    .client-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (min-width: 600px) {
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <div class="card">
-        <h1>Gateway Registered Clients</h1>
-        <ul id="list"></ul>
-        <div class="row">
-            <input id="newmac" placeholder="AA:BB:CC:DD:EE:FF">
-            <button id="addBtn">Add</button>
+  <h2>Client Configuration</h2>
+
+  <div class="card">
+    <h3>Registered Clients</h3>
+    <div id="clients"></div>
+    <button onclick="addClient()">➕ Add Client</button>
+  </div>
+
+  <div style="text-align:center">
+    <button id="saveBtn" onclick="saveClients()">💾 Save</button>
+  </div>
+
+  <script>
+    let clientCounter = 0;
+
+    function addClient(initial = {}) {
+      clientCounter++;
+      const div = document.createElement("div");
+      div.className = "client-block expanded";
+
+      const name = initial.name || ("Client " + clientCounter);
+      const mac = initial.mac || "";
+      const midi = initial.channel || 1;
+
+      div.innerHTML = `
+        <div class="client-header">
+          <span class="client-title">${name}</span>
+          <button type="button" class="toggle-btn">-</button>
         </div>
-    </div>
+        <div class="client-content">
+          <label>Client Name
+            <input type="text" class="client-name" value="${name}">
+          </label>
+          <label>MAC Address
+            <input type="text" class="client-mac" value="${mac}" placeholder="AA:BB:CC:DD:EE:FF">
+          </label>
+          <label>MIDI Channel
+            <select class="client-channel">
+              ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}" ${midi == i + 1 ? "selected" : ""}>${i + 1}</option>`).join("")}
+            </select>
+          </label>
+          <div class="client-actions">
+            <button class="btn-danger" onclick="removeClient(this)">❌ Remove</button>
+          </div>
+        </div>
+      `;
 
-    <script>
-        async function refreshList() {
-            try {
-                const res = await fetch('/list');
-                const clients = await res.json();
-                const ul = document.getElementById('list');
-                ul.innerHTML = '';
-                if (clients.length === 0) {
-                    ul.innerHTML = '<li>No registered clients</li>';
-                } else {
-                    clients.forEach(mac => {
-                        const li = document.createElement('li');
-                        li.textContent = mac;
-                        ul.appendChild(li);
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
+      const toggleBtn = div.querySelector(".toggle-btn");
+      toggleBtn.addEventListener("click", () => {
+        div.classList.toggle("expanded");
+        toggleBtn.textContent = div.classList.contains("expanded") ? "-" : "+";
+      });
 
-        document.getElementById('addBtn').onclick = async () => {
-            const mac = document.getElementById('newmac').value.trim();
-            if (!mac) return alert("Enter a MAC address");
-            await fetch(`/register?mac=${encodeURIComponent(mac)}`);
-            document.getElementById('newmac').value = '';
-            await refreshList();
-        };
+      const nameInput = div.querySelector(".client-name");
+      const titleSpan = div.querySelector(".client-title");
+      nameInput.addEventListener("input", () => {
+        titleSpan.textContent = nameInput.value || "(Unnamed Client)";
+      });
 
-        refreshList();
-    </script>
+      document.getElementById("clients").appendChild(div);
+    }
+
+    function removeClient(btn) {
+      btn.closest(".client-block").remove();
+    }
+
+    function getClientConfig(div) {
+      return {
+        name: div.querySelector(".client-name").value.trim(),
+        mac: div.querySelector(".client-mac").value.trim(),
+        channel: parseInt(div.querySelector(".client-channel").value)
+      };
+    }
+
+    function saveClients() {
+      const clients = [...document.querySelectorAll(".client-block")].map(getClientConfig);
+      fetch("/save_clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clients })
+      }).then(() => alert("Clients saved successfully"));
+    }
+
+    window.onload = () => {
+      fetch("/clients.json")
+        .then(r => {
+          if (!r.ok) throw new Error("No clients.json found");
+          return r.json();
+        })
+        .then(cfg => {
+          if (cfg.clients && cfg.clients.length > 0) {
+            document.getElementById("clients").innerHTML = "";
+            cfg.clients.forEach(c => addClient(c));
+          }
+        })
+        .catch(() => console.log("No existing clients.json — starting fresh."));
+    };
+  </script>
 </body>
-
 </html>

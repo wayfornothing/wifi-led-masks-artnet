@@ -20,8 +20,8 @@ private:
     uint8_t _channel;
     std::vector<LEDDevice> _leds;
 
-public:
     static constexpr const char* CONFIG_FILE = "/config.json";
+public:
     static DeviceConfig& instance() {
         static DeviceConfig _instance;
         return _instance;
@@ -37,7 +37,6 @@ public:
             while (true) delay(1000);
         }
 
-        // LEDS
         if (!fs_exists(CONFIG_FILE)) {
             Logger::warn("CONFIG: no config, creating default...");
             File leds_file = fs_open(CONFIG_FILE, "w");
@@ -83,7 +82,7 @@ public:
             }
         }
         
-        Logger::info("LOAD: OK");
+        Logger::info("%s LOAD: OK", CONFIG_FILE);
         return true;
     }
         
@@ -108,4 +107,5 @@ public:
     void set_channel(uint8_t c) { _channel = c; }
 
     std::vector<LEDDevice>& get_leds() { return _leds; }
+    const char* get_config_path() { return CONFIG_FILE; }
 };

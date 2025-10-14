@@ -40,6 +40,11 @@ public:
         Logger::info("Created LED '%s' at pin '%s' (%d)", name.c_str(), string_from_pin(pin), pin);
     }
 
+    void change_pin(uint8_t pin) {
+        _pin = pin;
+        pin_set_output(_pin);
+    }
+
     void select(bool select) {
         // Logger::info("%sSELECT LED '%s' at pin '%s'", select ? "" : "UN", name.c_str(), string_from_pin(_pin));
         _selected = select;

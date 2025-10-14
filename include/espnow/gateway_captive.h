@@ -1,79 +1,53 @@
-#pragma once
+#include <Arduino.h>
+#include <FS.h>
+#ifdef ESP32
+#include <SPIFFS.h>
+#include <AsyncTCP.h>
+#else
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
 
-#include "hal/hal.h"
-#include "device_config.h"
-#include "gateway.html.h"
-#include "mac_loader.h"
+AsyncWebServer server(80);
 
-#include <functional>
-
-// std::vector<String> _macs;
-
-class CaptivePortal {
-
-#define AP_NAME "WFN-Config"
-
-public:
-    static void start_captive_portal() {
-
-        LEDDevice led(LED_BUILTIN, "");
-        led.blink(DEFAULT_BLINK_INTERVAL_MS);
-
-        display_print_str(AP_NAME, 15, 25);
-        std::vector<String> _macs = MACLoader::load_mac_adresses();
-
-        AsyncWebServer server(80);
-        DNSServer dns;
-        WiFi.mode(WIFI_AP);
-        WiFi.softAP(AP_NAME);
-        dns.start(53, "*", WiFi.softAPIP());
-
-        // captive portal redirect
-        // server.onNotFound([&server]()
-        //                   {
-        //     server.sendHeader("Location", String("http://") + WiFi.softAPIP().toString() + "/", true);
-        //     server.send(302, "text/plain", ""); });
-
-        server.onNotFound([](AsyncWebServerRequest *request) {
-                // request.se
-            request->send(302, "text/plain", "");
-        });
-
-        // List registered clients
-        server.on("/list", HTTP_GET, [&_macs](AsyncWebServerRequest *request) {
-            DynamicJsonDocument doc(1024);
-            JsonArray arr = doc.to<JsonArray>();
-            for (auto &mac : _macs) {
-                arr.add(mac);
-            }
-            String json;
-            serializeJson(arr, json);
-            request->send(200, "application/json", json); 
-        });
-
-        // Register a new client
-        server.on("/register", HTTP_GET, [&_macs](AsyncWebServerRequest *request) {
-            if (request->hasParam("mac")) {
-                String mac = request->getParam("mac")->value();
-                mac.toUpperCase();
-                if (std::find(_macs.begin(), _macs.end(), mac) == _macs.end()) {
-                    _macs.push_back(mac);
-                    Serial.printf("Registered new client: %s\n", mac.c_str());
-                }
-                request->send(200, "text/plain", "OK");
-            } else {
-                request->send(400, "text/plain", "Missing 'mac' param");
-            } 
-        });
-
-        Logger::info("Captive portal started at %s\n", WiFi.softAPIP().toString().c_str());
-
-        server.begin();
-        // blocking on purpose
-        // while (1)
-        // {
-        //     dns.processNextRequest();
-        //     server.handleClient();
-        // }
+void __setup() {
+    Serial.begin(115200);
+    if (!SPIFFS.begin(true)) {
+        Serial.println("Failed to mount SPIFFS");
+        return;
     }
-};
+
+    // Serve static files (HTML, JS, CSS)
+    server.serveStatic("/", SPIFFS, "/").setDefaultFile("clients.html");
+
+    // Serve existing clients.json
+    server.on("/clients.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (SPIFFS.exists("/clients.json")) {
+            request->send(SPIFFS, "/clients.json", "application/json");
+        } else {
+            request->send(404, "application/json", "{\"clients\":[]}");
+        } 
+    });
+
+    // Save clients.json
+    server.on("/save_clients", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t, size_t) {
+        File file = SPIFFS.open("/clients.json", FILE_WRITE);
+        if (!file) {
+            request->send(500, "text/plain", "Failed to open file for writing");
+            return;
+        }
+        file.write(data, len);
+        file.close();
+        request->send(200, "text/plain", "Saved");
+        Serial.println("Clients config saved!"); 
+    });
+
+    server.begin();
+    Serial.println("Server started");
+}
+
+void __loop()
+{
+    // Nothing required here
+}
