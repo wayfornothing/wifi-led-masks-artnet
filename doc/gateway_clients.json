@@ -1,0 +1,29 @@
+{
+    "clients": [
+        {
+            "name": "Olivier",
+            "mac": "EC:FA:BC:63:78:31",
+            "channel": 2
+        },
+        {
+            "name": "Yann",
+            "mac": "8C:AA:B5:16:42:1C",
+            "channel": 3
+        },
+        {
+            "name": "Jerome",
+            "mac": "2C:F4:32:7B:E4:71",
+            "channel": 4
+        },
+        {
+            "name": "Max",
+            "mac": "FC:F5:C4:8B:32:50",
+            "channel": 5
+        },
+        {
+            "name": "Bertie",
+            "mac": "68:c6:3a:f6:51:00",
+            "channel": 6
+        }
+    ]
+}

@@ -2,167 +2,167 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Client Configuration</title>
-  <style>
-    :root {
-      --bg: #f5f7fa;
-      --card-bg: #ffffff;
-      --accent: #0077cc;
-      --danger: #cc0000;
-      --border: #ddd;
-      --radius: 10px;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Client Configuration</title>
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --accent: #0077cc;
+            --danger: #cc0000;
+            --border: #ddd;
+            --radius: 10px;
+        }
 
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      background: var(--bg);
-      color: #333;
-      padding: 1rem;
-    }
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #333;
+            padding: 1rem;
+        }
 
-    h2,
-    h3 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
+        h2,
+        h3 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
 
-    .card {
-      background: var(--card-bg);
-      padding: 1rem;
-      border-radius: var(--radius);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 1rem;
-    }
+        .card {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
 
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
 
-    input,
-    select,
-    button {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.25rem;
-      margin-bottom: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
 
-    button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-    button:hover {
-      background: #005fa3;
-    }
+        button:hover {
+            background: #005fa3;
+        }
 
-    .btn-danger {
-      background: var(--danger);
-    }
+        .btn-danger {
+            background: var(--danger);
+        }
 
-    .btn-danger:hover {
-      background: #990000;
-    }
+        .btn-danger:hover {
+            background: #990000;
+        }
 
-    .client-block {
-      border: 1px solid var(--border);
-      padding: 0.5rem;
-      border-radius: var(--radius);
-      margin-bottom: 1rem;
-      background: #fafafa;
-    }
+        .client-block {
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            background: #fafafa;
+        }
 
-    .toggle-btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      font-size: 1rem;
-      line-height: 1;
-      cursor: pointer;
-      flex-shrink: 0;
-      margin-left: 0.5rem;
-    }
+        .toggle-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+        }
 
-    .toggle-btn:hover {
-      background: #005fa3;
-    }
+        .toggle-btn:hover {
+            background: #005fa3;
+        }
 
-    .client-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-weight: bold;
-      padding: 0.25rem 0;
-    }
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0.25rem 0;
+        }
 
-    .client-title {
-      flex-grow: 1;
-    }
+        .client-title {
+            flex-grow: 1;
+        }
 
-    .client-content {
-      display: none;
-    }
+        .client-content {
+            display: none;
+        }
 
-    .client-block.expanded .client-content {
-      display: block;
-    }
+        .client-block.expanded .client-content {
+            display: block;
+        }
 
-    .client-actions {
-      display: flex;
-      justify-content: flex-end;
-    }
+        .client-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
 
-    @media (min-width: 600px) {
-      .form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-    }
-  </style>
+        @media (min-width: 600px) {
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <h2>Client Configuration</h2>
+    <h2>Client Configuration</h2>
 
-  <div class="card">
-    <h3>Registered Clients</h3>
-    <div id="clients"></div>
-    <button onclick="addClient()">➕ Add Client</button>
-  </div>
+    <div class="card">
+        <h3>Registered Clients</h3>
+        <div id="clients"></div>
+        <button onclick="addClient()">➕ Add Client</button>
+    </div>
 
-  <div style="text-align:center">
-    <button id="saveBtn" onclick="saveClients()">💾 Save</button>
-  </div>
+    <div style="text-align:center">
+        <button id="saveBtn" onclick="saveClients()">💾 Save</button>
+    </div>
 
-  <script>
-    let clientCounter = 0;
+    <script>
+        let clientCounter = 0;
 
-    function addClient(initial = {}) {
-      clientCounter++;
-      const div = document.createElement("div");
-      div.className = "client-block expanded";
+        function addClient(initial = {}) {
+            clientCounter++;
+            const div = document.createElement("div");
+            div.className = "client-block expanded";
 
-      const name = initial.name || ("Client " + clientCounter);
-      const mac = initial.mac || "";
-      const midi = initial.channel || 1;
+            const name = initial.name || ("Client " + clientCounter);
+            const mac = initial.mac || "";
+            const midi = initial.channel || 1;
 
-      div.innerHTML = `
+            div.innerHTML = `
         <div class="client-header">
           <span class="client-title">${name}</span>
           <button type="button" class="toggle-btn">-</button>
@@ -185,56 +185,57 @@
         </div>
       `;
 
-      const toggleBtn = div.querySelector(".toggle-btn");
-      toggleBtn.addEventListener("click", () => {
-        div.classList.toggle("expanded");
-        toggleBtn.textContent = div.classList.contains("expanded") ? "-" : "+";
-      });
+            const toggleBtn = div.querySelector(".toggle-btn");
+            toggleBtn.addEventListener("click", () => {
+                div.classList.toggle("expanded");
+                toggleBtn.textContent = div.classList.contains("expanded") ? "-" : "+";
+            });
 
-      const nameInput = div.querySelector(".client-name");
-      const titleSpan = div.querySelector(".client-title");
-      nameInput.addEventListener("input", () => {
-        titleSpan.textContent = nameInput.value || "(Unnamed Client)";
-      });
+            const nameInput = div.querySelector(".client-name");
+            const titleSpan = div.querySelector(".client-title");
+            nameInput.addEventListener("input", () => {
+                titleSpan.textContent = nameInput.value || "(Unnamed Client)";
+            });
 
-      document.getElementById("clients").appendChild(div);
-    }
+            document.getElementById("clients").appendChild(div);
+        }
 
-    function removeClient(btn) {
-      btn.closest(".client-block").remove();
-    }
+        function removeClient(btn) {
+            btn.closest(".client-block").remove();
+        }
 
-    function getClientConfig(div) {
-      return {
-        name: div.querySelector(".client-name").value.trim(),
-        mac: div.querySelector(".client-mac").value.trim(),
-        channel: parseInt(div.querySelector(".client-channel").value)
-      };
-    }
+        function getClientConfig(div) {
+            return {
+                name: div.querySelector(".client-name").value.trim(),
+                mac: div.querySelector(".client-mac").value.trim(),
+                channel: parseInt(div.querySelector(".client-channel").value)
+            };
+        }
 
-    function saveClients() {
-      const clients = [...document.querySelectorAll(".client-block")].map(getClientConfig);
-      fetch("/save_clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clients })
-      }).then(() => alert("Clients saved successfully"));
-    }
+        function saveClients() {
+            const clients = [...document.querySelectorAll(".client-block")].map(getClientConfig);
+            fetch("/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ clients })
+            }).then(() => alert("Clients saved successfully"));
+        }
 
-    window.onload = () => {
-      fetch("/clients.json")
-        .then(r => {
-          if (!r.ok) throw new Error("No clients.json found");
-          return r.json();
-        })
-        .then(cfg => {
-          if (cfg.clients && cfg.clients.length > 0) {
-            document.getElementById("clients").innerHTML = "";
-            cfg.clients.forEach(c => addClient(c));
-          }
-        })
-        .catch(() => console.log("No existing clients.json — starting fresh."));
-    };
-  </script>
+        window.onload = () => {
+            fetch("/config.json")
+                .then(r => {
+                    if (!r.ok) throw new Error("No clients.json found");
+                    return r.json();
+                })
+                .then(cfg => {
+                    if (cfg.clients && cfg.clients.length > 0) {
+                        document.getElementById("clients").innerHTML = "";
+                        cfg.clients.forEach(c => addClient(c));
+                    }
+                })
+                .catch(() => console.log("No existing clients.json — starting fresh."));
+        };
+    </script>
 </body>
+
 </html>

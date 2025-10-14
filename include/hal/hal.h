@@ -15,7 +15,7 @@ inline void pin_set_output(int pin) {
 }
 
 inline void pin_set_input(int pin) {
-    pinMode(pin, INPUT);
+    pinMode(pin, INPUT_PULLUP);
 }
 
 inline void pin_digital_write(int pin, bool enable) {
@@ -144,8 +144,6 @@ bool fs_begin() {
 #include <ArtnetWifi.h>
 #include <ESPmDNS.h>
 #include <esp_now.h>
-// #include <ESPAsyncWebServer.h>
-
 
 void reboot() {
     ESP.restart();
@@ -180,21 +178,33 @@ uint8_t pin_from_string(const String& pin_name) {
     if (pin_name == "D6") return 6;
     if (pin_name == "D7") return 7;
     if (pin_name == "D8") return 8;
-    // if (pin_name == "D9") return D9;
-    // if (pin_name == "D10") return D10;
     return PIN_INVALID;
+}
+
+
+const char* string_from_pin(const uint8_t pin) {
+    if (pin == 0) return "D0";
+    if (pin == 1) return "D1";
+    if (pin == 2) return "D2";
+    if (pin == 3) return "D3";
+    if (pin == 4) return "D4";
+    if (pin == 5) return "D5";
+    if (pin == 6) return "D6";
+    if (pin == 7) return "D7";
+    if (pin == 8) return "D8";
+    return "INVALID";
 }
 
 void dns_update() {
 }
 
-#define PIN_RESET_BUTTON (0)
+#define PIN_RESET_BUTTON (2)
 void config_reset_button() {
     pin_set_input(PIN_RESET_BUTTON);
 }
 
 bool is_reset_button_pressed() {
-    return pin_digital_read(PIN_RESET_BUTTON) == HIGH;
+    return pin_digital_read(PIN_RESET_BUTTON) == LOW;
 }
 
 bool fs_begin() {

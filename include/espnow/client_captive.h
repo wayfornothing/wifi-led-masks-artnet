@@ -11,12 +11,10 @@ class CaptivePortal {
 
 public:
     static void start_captive_portal() {
-        
 
         Logger::info("MAC:%s ", WiFi.macAddress());
         
         const char* config_path = DeviceConfig::instance().get_config_path();
-
 
         LEDDevice _test_led(0, "test");
 
