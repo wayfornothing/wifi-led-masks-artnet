@@ -23,7 +23,7 @@ else:
 
 # copy html files into progmem
 DATA_DIR = "data"
-HEADER_DIR = "include"
+HEADER_DIR = "include/web"
 files = [f for f in os.listdir(DATA_DIR) if f.endswith(".html")]
 for file in files:
     HTML_FILE = os.path.join(DATA_DIR, file)

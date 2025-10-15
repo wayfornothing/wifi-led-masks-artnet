@@ -2,7 +2,7 @@
 
 #include "hal/hal.h"
 #include "led_device.h"
-#include "gateway_captive.html.h"
+#include "web/gateway_captive.html.h"
 
 #include <functional>
 

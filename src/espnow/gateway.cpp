@@ -50,11 +50,10 @@ void setup() {
         }
         else {
             display_print_str(client.name, 5, 25);
-            delay(500);
+            delay(1000);
         }
     }
 
-    delay(2000);
     display_print_str("ready", 15, 25);
 }
 

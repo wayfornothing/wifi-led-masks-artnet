@@ -2,7 +2,7 @@
 
 #include "hal/hal.h"
 #include "espnow/client_config.h"
-#include "client_captive.html.h"
+#include "web/client_captive.html.h"
 #include "led_device.h"
 
 #define AP_NAME "WFN-Config"
