@@ -86,7 +86,7 @@ void loop() {
             }
 
             for (client_data_t& client: GatewayConfig::instance().get_clients()) {
-                if (MIDI_CHANNEL(pkt) + 1 == client.channel) {
+                if (MIDI_CHANNEL(pkt.type) + 1 == client.channel) {
                     pkt.seq = client.seq++;
                     pkt.crc = crc8_dallas((uint8_t *)&pkt, sizeof(midi_packet_t) - 1);
                     esp_now_send(client.mac_address, (uint8_t *)&pkt, sizeof(midi_packet_t));

@@ -36,8 +36,8 @@ CC# | Code | Fonction | Valeur CC
 5 | CC_LED_HEARTBEAT | Pulsation continue | Intervalle entre 2 frames en millisecondes
 6 | CC_LED_PULSE | Pulsation unique | Intervalle entre 2 frames en millisecondes
 7 | CC_LED_RANDOM | Clignotement aléatoire jusqu'à annulation | Intervalle entre 2 frames en millisecondes
-8 | CC_CFG_RANDOM_MID | Règle la balance du random | Balance en % (plafonné à 100%)
-9 | CC_CFG_HEARTBEAT_MAX | Règle la luminosité max de HEARTBEAT et PULSE | 0 == éteint, 127 == luminosité max
+8 | CC_CFG_SECONDARY | Règle la luminosité max de HEARTBEAT, PULSE, FADE, et règle la balance RANDOM | 0 == éteint, 127 == luminosité max, et balance en % (plafonné à 100%) 
+9 | CC_CFG_RESERVED | -
 
 
 ## MIDI Notes

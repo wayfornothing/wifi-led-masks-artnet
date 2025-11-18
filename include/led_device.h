@@ -14,6 +14,10 @@ static const int MIN_RANDOM_INTERVAL_MS = 5;
 static const int DEFAULT_RANDOM_INTERVAL_MS = 50;
 static const int MAX_RANDOM_INTERVAL_MS = 200;
 
+static const int MIN_BLINK_MIDPOINT = 1;
+static const int DEFAULT_BLINK_MIDPOINT = 50;
+static const int MAX_BLINK_MIDPOINT = 99;
+
 static const int MIN_RANDOM_MIDPOINT = 1;
 static const int DEFAULT_RANDOM_MIDPOINT = 50;
 static const int MAX_RANDOM_MIDPOINT = 99;
@@ -28,14 +32,10 @@ public:
     String name;
 
     LEDDevice(uint8_t pin, 
-              String name, 
-              int random_midpoint_percent = DEFAULT_RANDOM_MIDPOINT,
-              int heartbeat_max = FADE_MAX) : 
+              String name) : 
         name(name),
         _pin(pin), 
         _selected(false) {
-        set_random_midpoint(random_midpoint_percent);
-        set_heartbeat_max(heartbeat_max);
         pin_set_output(_pin);
         Logger::info("Created LED '%s' at pin '%s' (%d)", name.c_str(), string_from_pin(pin), pin);
     }
@@ -132,6 +132,11 @@ public:
         pin_analog_write(_pin, analog_value);
     }
 
+    // void set_blink_midpoint(uint8_t percent) {
+    //     _blink_midpoint = RAND_MAX / (100.0 / _clamp((int)percent, MIN_BLINK_MIDPOINT, MAX_BLINK_MIDPOINT));
+    //     Logger::info("BMID: %d%%", percent);
+    // }
+
     void set_random_midpoint(uint8_t percent) {
         _random_midpoint = RAND_MAX / (100.0 / _clamp((int)percent, MIN_RANDOM_MIDPOINT, MAX_RANDOM_MIDPOINT));
         Logger::info("RMID: %d%%", percent);
@@ -142,11 +147,27 @@ public:
         Logger::info("HMAX: %d", _heartbeat_max);
     }
 
+    void set_fade_max(uint8_t max) {
+        _fade_max = _clamp((int)max, FADE_MIN, FADE_MAX);
+        Logger::info("FMAX: %d", _fade_max);
+    }
+
+    void set_secondary_cfg(uint8_t value) {
+    //    set_blink_midpoint(value);
+       set_random_midpoint(value);
+       set_fade_max(value);
+       set_heartbeat_max(value);
+    }
+
+    void dummy() {}
+
 private:
     uint8_t         _pin;
     bool            _selected;
-    int             _random_midpoint;
-    int             _heartbeat_max;
+    // int             _blink_midpoint = DEFAULT_BLINK_MIDPOINT;
+    int             _random_midpoint = DEFAULT_RANDOM_MIDPOINT;
+    int             _heartbeat_max = FADE_MAX;
+    int             _fade_max = FADE_MAX;
     int             _heartbeat_delta = 1;
     TickerWrapper   _ticker;
     int             _fade_idx = FADE_MIN;
@@ -176,8 +197,10 @@ private:
     }
 
     void _fade_in() {
-        pin_analog_write(_pin, _dim_tab[_fade_idx++]);
-        if (_fade_idx == FADE_MAX) {
+        uint8_t value = _dim_tab[_fade_idx++];
+        pin_analog_write(_pin, value);
+        // if (_fade_idx == _fade_max) {
+        if (value >= _fade_max) {
             // fade finished
             _fade_idx = FADE_MIN;
             _ticker.detach();
@@ -185,10 +208,11 @@ private:
     }
     
     void _fade_out() {
-        pin_analog_write(_pin, _dim_tab[_fade_idx--]);
+        uint8_t value = _dim_tab[_fade_idx--];
+        pin_analog_write(_pin, value);
         if (_fade_idx == FADE_MIN) {
             // fade finished
-            _fade_idx = FADE_MAX;
+            _fade_idx = _fade_max;
             _ticker.detach();
         }
     }

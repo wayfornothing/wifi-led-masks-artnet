@@ -9,7 +9,8 @@ typedef enum CCCommand {
     CC_LED_HEARTBEAT,
     CC_LED_PULSE,
     CC_LED_RANDOM,
-    CC_CFG_RANDOM_MID,
-    CC_CFG_HEARTBEAT_MAX,
+    // random midpoint, blink midpoint, fade / heartbeat / pulse max value
+    CC_CFG_SECONDARY,
+    CC_CFG_RESERVED,
     CC_LAST
 } eCCCommand;

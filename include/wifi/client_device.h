@@ -5,27 +5,14 @@
 
 #include "hal/hal.h"
 #include "device_config.h"
-#include "web_server.h"
+#include "wifi/web_server.h"
 #include "wifi_manager.h"
 #include "led_device.h"
+#include "cc_commands.h"
 
 #define MIDI_TYPE_PC (1)
 #define MIDI_TYPE_CC (2)
 #define MIDI_TYPE_NOTE (3)
-
-typedef enum CCCommand {
-    CC_LED_OFF = 0,
-    CC_LED_DIM,
-    CC_LED_BLINK,
-    CC_LED_FADE_IN,
-    CC_LED_FADE_OUT,
-    CC_LED_HEARTBEAT,
-    CC_LED_PULSE,
-    CC_LED_RANDOM,
-    CC_CFG_RANDOM_MID,
-    CC_CFG_HEARTBEAT_MAX,
-    CC_LAST
-} eCCCommand;
 
 #define TEST_BIT(v, b) (v & (1 << b))
 
@@ -171,8 +158,8 @@ private:
             {CC_LED_RANDOM,         [](LEDDevice& led, uint8_t v){ led.random(v);               }},
             {CC_LED_FADE_IN,        [](LEDDevice& led, uint8_t v){ led.fade_in(v);              }},
             {CC_LED_FADE_OUT,       [](LEDDevice& led, uint8_t v){ led.fade_out(v);             }},
-            {CC_CFG_RANDOM_MID,     [](LEDDevice& led, uint8_t v){ led.set_random_midpoint(v);  }},
-            {CC_CFG_HEARTBEAT_MAX,  [](LEDDevice& led, uint8_t v){ led.set_heartbeat_max(v);    }},
+            {CC_CFG_SECONDARY,      [](LEDDevice& led, uint8_t v){ led.set_secondary_cfg(v);    }},
+            {CC_CFG_RESERVED,       [](LEDDevice& led, uint8_t v){ led.dummy();                 }},
         };
 
         auto it = cc_actions.find(cc);

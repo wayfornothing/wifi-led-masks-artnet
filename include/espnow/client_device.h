@@ -45,7 +45,7 @@ private:
         }
         else {
             // Détection de perte
-            if (MIDI_CHANNEL(pkt) + 1 == DeviceConfig::instance().get_channel()) {
+            if (MIDI_CHANNEL(pkt.type) + 1 == DeviceConfig::instance().get_channel()) {
                 if (pkt.seq != _last_seq + 1 && _last_seq != 0) {
                     Logger::warn("Missing packets: %lu → %lu", _last_seq, pkt.seq);
                     _lost_seqs++;
@@ -61,7 +61,7 @@ private:
 
     static void _process_midi(midi_packet_t* pkt) {
 
-        switch (pkt->type & 0xF0) {
+        switch (MIDI_TYPE(pkt->type)) {
             case MIDI_TYPE_PC:
                 Logger::info("PC %d", pkt->number);
                 _process_pc(pkt->number);
@@ -112,8 +112,8 @@ private:
             {CC_LED_RANDOM,         [](LEDDevice& led, uint8_t v){ led.random(v);               }},
             {CC_LED_FADE_IN,        [](LEDDevice& led, uint8_t v){ led.fade_in(v);              }},
             {CC_LED_FADE_OUT,       [](LEDDevice& led, uint8_t v){ led.fade_out(v);             }},
-            {CC_CFG_RANDOM_MID,     [](LEDDevice& led, uint8_t v){ led.set_random_midpoint(v);  }},
-            {CC_CFG_HEARTBEAT_MAX,  [](LEDDevice& led, uint8_t v){ led.set_heartbeat_max(v);    }},
+            {CC_CFG_SECONDARY,      [](LEDDevice& led, uint8_t v){ led.set_secondary_cfg(v);    }},
+            {CC_CFG_RESERVED,       [](LEDDevice& led, uint8_t v){ led.dummy();                 }},
         };
 
         auto it = cc_actions.find(cc);
