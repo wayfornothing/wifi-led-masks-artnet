@@ -38,7 +38,7 @@ def list_midi_ports():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", required=True)
+    parser.add_argument("--port")
     parser.add_argument("--midi", help="Nom du port MIDI virtuel")
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--bauds", default=115200)
